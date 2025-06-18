@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo">R</div>
+                <span class="logo-text">Rozijnen</span>
+                <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item" id="dashboard-nav">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item active" id="personalize-nav">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Personalize</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="far fa-lightbulb"></i>
+                    <span>Tips</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="user-profile">
+                <img src="https://via.placeholder.com/40" alt="User Profile" class="profile-img">
+                <div class="profile-info">
+                    <p class="profile-name">Alex Morgan</p>
+                    <p class="profile-role">Premium Plan</p>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view-container" style="display: none;">
+                <header class="dashboard-header">
+                    <div class="title-container">
+                        <h1>Energy Dashboard</h1>
+                        <p>Overzicht van uw energieverbruik en -opwekking</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="dropdown">
+                            <button class="dropdown-btn">Vandaag <i class="fas fa-chevron-down"></i></button>
+                        </div>
+                        <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
+                    </div>
+                </header>
+                
+                <div id="dashboard-grid" class="grid-container">
+                    <!-- Grid items will be cloned from personalize view -->
+                </div>
+            </div>
+            
+            <!-- Personalize View -->
+            <div id="personalize-view" class="view-container">
+                <header class="dashboard-header">
+                    <div class="title-container">
+                        <h1>Personalize</h1>
+                        <p>Creëer je eigen Dashboard</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="dropdown">
+                            <button class="dropdown-btn">Vandaag <i class="fas fa-chevron-down"></i></button>
+                        </div>
+                        <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
+                    </div>
+                </header>
+                
+                <button class="save-changes-btn">Save Changes</button>
+                
+                <div id="personalize-grid" class="grid-container personalize-mode">
+                    <!-- Solar Production Widget -->
+                    <div class="widget stat-card" data-widget-id="solar-production" data-col-span="1" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                        </div>
+                        <div class="stat-header">
+                            <span>Zonne-energie Productie</span>
+                            <i class="fas fa-sun stat-icon green"></i>
+                        </div>
+                        <div class="stat-value">24.8 kWh</div>
+                        <div class="stat-change positive">+12% vs gisteren</div>
+                    </div>
+                    
+                    <!-- Power Consumption Widget -->
+                    <div class="widget stat-card" data-widget-id="power-consumption" data-col-span="1" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                        </div>
+                        <div class="stat-header">
+                            <span>Stroomverbruik</span>
+                            <i class="fas fa-bolt stat-icon red"></i>
+                        </div>
+                        <div class="stat-value">18.2 kWh</div>
+                        <div class="stat-change negative">-15% vs gisteren</div>
+                    </div>
+                    
+                    <!-- Battery Status Widget -->
+                    <div class="widget stat-card" data-widget-id="battery-status" data-col-span="1" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                        </div>
+                        <div class="stat-header">
+                            <span>Batterij Status</span>
+                            <i class="fas fa-battery-three-quarters stat-icon blue"></i>
+                        </div>
+                        <div class="stat-value">78%</div>
+                        <div class="stat-desc">6.2 kWh opgeslagen</div>
+                    </div>
+                    
+                    <!-- Cost Savings Widget -->
+                    <div class="widget stat-card" data-widget-id="cost-savings" data-col-span="1" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                        </div>
+                        <div class="stat-header">
+                            <span>Kosten Besparing</span>
+                            <i class="fas fa-euro-sign stat-icon yellow"></i>
+                        </div>
+                        <div class="stat-value">€127.40</div>
+                        <div class="stat-desc">Deze maand</div>
+                    </div>
+                    
+                    <!-- Energy Production Chart Widget -->
+                    <div class="widget span-2-cols" data-widget-id="energy-production-chart" data-col-span="2" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
+                        </div>
+                        <div class="panel-header">
+                            <h3>Energie Productie</h3>
+                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
+                        </div>
+                        <div class="panel-content chart-container"></div>
+                    </div>
+                    
+                    <!-- Consumption vs Production Chart Widget -->
+                    <div class="widget span-2-cols" data-widget-id="consumption-production-chart" data-col-span="2" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
+                        </div>
+                        <div class="panel-header">
+                            <h3>Verbruik vs Productie</h3>
+                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
+                        </div>
+                        <div class="panel-content chart-container"></div>
+                    </div>
+                    
+                    <!-- Notifications Widget -->
+                    <div class="widget span-2-cols" data-widget-id="notifications" data-col-span="2" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
+                        </div>
+                        <div class="panel-header">
+                            <h3>Meldingen & Waarschuwingen</h3>
+                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
+                        </div>
+                        <div class="panel-content notifications">
+                            <div class="notification alert">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div class="notification-content">
+                                    <p class="notification-title">Hoog verbruik gedetecteerd</p>
+                                    <p class="notification-desc">Verbruik 25% hoger dan gemiddeld</p>
+                                </div>
+                            </div>
+                            
+                            <div class="notification success">
+                                <i class="fas fa-check-circle"></i>
+                                <div class="notification-content">
+                                    <p class="notification-title">Optimale productie</p>
+                                    <p class="notification-desc">Zonnepanelen presteren uitstekend</p>
+                                </div>
+                            </div>
+                            
+                            <div class="notification info">
+                                <i class="fas fa-info-circle"></i>
+                                <div class="notification-content">
+                                    <p class="notification-title">Batterij bijna vol</p>
+                                    <p class="notification-desc">Overweeg energie verkoop aan het net</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Weather Widget -->
+                    <div class="widget span-2-cols" data-widget-id="weather" data-col-span="2" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
+                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
+                        </div>
+                        <div class="panel-header">
+                            <h3>Weer Voorspelling</h3>
+                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
+                        </div>
+                        <div class="panel-content weather">
+                            <div class="weather-main">
+                                <i class="fas fa-sun weather-icon"></i>
+                                <div class="weather-temp">22°C</div>
+                                <div class="weather-day">Zondag</div>
+                            </div>
+                            <div class="weather-forecast">
+                                <div class="forecast-item">
+                                    <p>Zonkracht:</p>
+                                    <p class="forecast-value">8/10</p>
+                                </div>
+                                <div class="forecast-item">
+                                    <p>Verwachte productie:</p>
+                                    <p class="forecast-value highlight">28 kWh</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Devices Widget -->
+                    <div class="widget span-4-cols" data-widget-id="devices" data-col-span="4" data-row-span="1">
+                        <div class="widget-controls">
+                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
+                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
+                        </div>
+                        <div class="section-header">
+                            <h3>Apparaten Status</h3>
+                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
+                        </div>
+                        <div class="device-cards">
+                            <div class="device-card">
+                                <div class="device-icon green"><i class="fas fa-solar-panel"></i></div>
+                                <div class="device-info">
+                                    <p class="device-name">Zonnepanelen</p>
+                                    <p class="device-status active">Actief</p>
+                                </div>
+                            </div>
+                            
+                            <div class="device-card">
+                                <div class="device-icon blue"><i class="fas fa-car-battery"></i></div>
+                                <div class="device-info">
+                                    <p class="device-name">Batterij</p>
+                                    <p class="device-status charging">Opladen</p>
+                                </div>
+                            </div>
+                            
+                            <div class="device-card">
+                                <div class="device-icon orange"><i class="fas fa-temperature-high"></i></div>
+                                <div class="device-info">
+                                    <p class="device-name">Warmtepomp</p>
+                                    <p class="device-status active">Actief</p>
+                                </div>
+                            </div>
+                            
+                            <div class="device-card">
+                                <div class="add-device-btn">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html> 
