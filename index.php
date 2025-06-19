@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+<?php
+header('Location: login/login.php');
+exit();
+?>
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
@@ -10,13 +13,21 @@
 </head>
 <body>
     <div class="container">
+        <?php if (!isset($_SESSION['user_id'])): ?>
+            <div class="form-container" style="margin: 40px auto; max-width: 400px; text-align: center;">
+                <h1>Welkom bij het Energy Dashboard</h1>
+                <div class="buttons" style="margin-top: 24px;">
+                    <a href="login/login.php" class="btn" style="margin-right: 10px;">Login</a>
+                    <a href="login/register.php" class="btn">Register</a>
+                </div>
+            </div>
+        <?php else: ?>
         <aside class="sidebar">
             <div class="logo-container">
                 <div class="logo">R</div>
                 <span class="logo-text">Rozijnen</span>
                 <button class="menu-toggle"><i class="fas fa-bars"></i></button>
             </div>
-            
             <nav class="nav-menu">
                 <a href="#" class="nav-item" id="dashboard-nav">
                     <i class="fas fa-chart-line"></i>
@@ -26,7 +37,7 @@
                     <i class="fas fa-sliders-h"></i>
                     <span>Personalize</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item"></a>
                     <i class="far fa-lightbulb"></i>
                     <span>Tips</span>
                 </a>
@@ -35,16 +46,19 @@
                     <span>Settings</span>
                 </a>
             </nav>
-            
             <div class="user-profile">
                 <img src="https://via.placeholder.com/40" alt="User Profile" class="profile-img">
                 <div class="profile-info">
-                    <p class="profile-name">Alex Morgan</p>
-                    <p class="profile-role">Premium Plan</p>
+                    <p class="profile-name"><?php echo isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Gebruiker'; ?></p>
+                    <button id="settings-btn" class="btn" style="width:100%;margin-top:5px;">Settings</button>
+                </div>
+                <div id="settings-popup" style="display:none;position:absolute;left:0;bottom:60px;background:#fff;border:1px solid #ccc;padding:15px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:1000;min-width:120px;">
+                    <form action="logout.php" method="post" style="margin:0;">
+                        <button type="submit" class="btn" style="width:100%;">Logout</button>
+                    </form>
                 </div>
             </div>
         </aside>
-        
         <main class="main-content">
             <!-- Dashboard View -->
             <div id="dashboard-view" class="view-container" style="display: none;">
@@ -60,12 +74,10 @@
                         <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
                     </div>
                 </header>
-                
                 <div id="dashboard-grid" class="grid-container">
                     <!-- Grid items will be cloned from personalize view -->
                 </div>
             </div>
-            
             <!-- Personalize View -->
             <div id="personalize-view" class="view-container">
                 <header class="dashboard-header">
@@ -80,9 +92,7 @@
                         <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
                     </div>
                 </header>
-                
                 <button class="save-changes-btn">Save Changes</button>
-                
                 <div id="personalize-grid" class="grid-container personalize-mode">
                     <!-- Solar Production Widget -->
                     <div class="widget stat-card" data-widget-id="solar-production" data-col-span="1" data-row-span="1">
@@ -97,7 +107,6 @@
                         <div class="stat-value">24.8 kWh</div>
                         <div class="stat-change positive">+12% vs gisteren</div>
                     </div>
-                    
                     <!-- Power Consumption Widget -->
                     <div class="widget stat-card" data-widget-id="power-consumption" data-col-span="1" data-row-span="1">
                         <div class="widget-controls">
@@ -111,7 +120,6 @@
                         <div class="stat-value">18.2 kWh</div>
                         <div class="stat-change negative">-15% vs gisteren</div>
                     </div>
-                    
                     <!-- Battery Status Widget -->
                     <div class="widget stat-card" data-widget-id="battery-status" data-col-span="1" data-row-span="1">
                         <div class="widget-controls">
@@ -125,7 +133,6 @@
                         <div class="stat-value">78%</div>
                         <div class="stat-desc">6.2 kWh opgeslagen</div>
                     </div>
-                    
                     <!-- Cost Savings Widget -->
                     <div class="widget stat-card" data-widget-id="cost-savings" data-col-span="1" data-row-span="1">
                         <div class="widget-controls">
@@ -139,7 +146,6 @@
                         <div class="stat-value">€127.40</div>
                         <div class="stat-desc">Deze maand</div>
                     </div>
-                    
                     <!-- Energy Production Chart Widget -->
                     <div class="widget span-2-cols" data-widget-id="energy-production-chart" data-col-span="2" data-row-span="1">
                         <div class="widget-controls">
@@ -153,7 +159,6 @@
                         </div>
                         <div class="panel-content chart-container"></div>
                     </div>
-                    
                     <!-- Consumption vs Production Chart Widget -->
                     <div class="widget span-2-cols" data-widget-id="consumption-production-chart" data-col-span="2" data-row-span="1">
                         <div class="widget-controls">
@@ -167,7 +172,6 @@
                         </div>
                         <div class="panel-content chart-container"></div>
                     </div>
-                    
                     <!-- Notifications Widget -->
                     <div class="widget span-2-cols" data-widget-id="notifications" data-col-span="2" data-row-span="1">
                         <div class="widget-controls">
@@ -187,7 +191,6 @@
                                     <p class="notification-desc">Verbruik 25% hoger dan gemiddeld</p>
                                 </div>
                             </div>
-                            
                             <div class="notification success">
                                 <i class="fas fa-check-circle"></i>
                                 <div class="notification-content">
@@ -195,7 +198,6 @@
                                     <p class="notification-desc">Zonnepanelen presteren uitstekend</p>
                                 </div>
                             </div>
-                            
                             <div class="notification info">
                                 <i class="fas fa-info-circle"></i>
                                 <div class="notification-content">
@@ -205,7 +207,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <!-- Weather Widget -->
                     <div class="widget span-2-cols" data-widget-id="weather" data-col-span="2" data-row-span="1">
                         <div class="widget-controls">
@@ -235,7 +236,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <!-- Devices Widget -->
                     <div class="widget span-4-cols" data-widget-id="devices" data-col-span="4" data-row-span="1">
                         <div class="widget-controls">
@@ -254,7 +254,6 @@
                                     <p class="device-status active">Actief</p>
                                 </div>
                             </div>
-                            
                             <div class="device-card">
                                 <div class="device-icon blue"><i class="fas fa-car-battery"></i></div>
                                 <div class="device-info">
@@ -262,7 +261,6 @@
                                     <p class="device-status charging">Opladen</p>
                                 </div>
                             </div>
-                            
                             <div class="device-card">
                                 <div class="device-icon orange"><i class="fas fa-temperature-high"></i></div>
                                 <div class="device-info">
@@ -270,7 +268,6 @@
                                     <p class="device-status active">Actief</p>
                                 </div>
                             </div>
-                            
                             <div class="device-card">
                                 <div class="add-device-btn">
                                     <i class="fas fa-plus"></i>
@@ -281,6 +278,24 @@
                 </div>
             </div>
         </main>
+        <?php endif; ?>
     </div>
 </body>
-</html> 
+</html>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var settingsBtn = document.getElementById('settings-btn');
+    var popup = document.getElementById('settings-popup');
+    if(settingsBtn && popup) {
+        settingsBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(e) {
+            if (!popup.contains(e.target) && e.target !== settingsBtn) {
+                popup.style.display = 'none';
+            }
+        });
+    }
+});
+</script>

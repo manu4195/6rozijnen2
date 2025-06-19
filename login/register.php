@@ -4,7 +4,7 @@ session_start();
 
 // Check if user is already logged in
 if(isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -24,7 +24,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Prepare a select statement
         $conn = connectDB();
-        $sql = "SELECT id FROM users WHERE user_name = :username";
+        $sql = "SELECT id FROM gebruiker WHERE naam = :username";
         
         if($stmt = $conn->prepare($sql)) {
             // Bind variables to the prepared statement as parameters
@@ -72,7 +72,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     if(empty($username_err) && empty($password_err) && empty($confirm_password_err)) {
         
         // Prepare an insert statement
-        $sql = "INSERT INTO users (user_name, password) VALUES (:username, :password)";
+        $sql = "INSERT INTO gebruiker (naam, wachtwoord) VALUES (:username, :password)";
          
         if($stmt = $conn->prepare($sql)) {
             // Bind variables to the prepared statement as parameters

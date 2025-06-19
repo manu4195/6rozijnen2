@@ -1,18 +1,22 @@
 <?php
-// Database configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root'); // Change to your database username
-define('DB_PASS', ''); // Change to your database password
-define('DB_NAME', 'login_roz_db');
-
-// Create database connection
 function connectDB() {
+    $host = 'localhost';         // or '127.0.0.1'
+    $db   = 'seddata';           // your new database name
+    $user = 'root';              // default XAMPP user
+    $pass = '';                  // default XAMPP password is empty
+    $charset = 'utf8mb4';
+
+    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ];
+
     try {
-        $conn = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
-        // Set the PDO error mode to exception
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        return $conn;
-    } catch(PDOException $e) {
-        die("Connection failed: " . $e->getMessage());
+        return new PDO($dsn, $user, $pass, $options);
+    } catch (\PDOException $e) {
+        throw new \PDOException($e->getMessage(), (int)$e->getCode());
     }
 }
+?>
