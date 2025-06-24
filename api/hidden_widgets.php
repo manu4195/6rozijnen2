@@ -1,53 +1,64 @@
 <?php
-// Database connection settings
-$host = 'localhost';
-$dbname = 'seddata';
-$username = 'root';
-$password = '';
-
 header('Content-Type: application/json');
 
+// Get user_id from query string
+$userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 1;
+
 try {
-    // Create PDO connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Create dummy data for hidden widgets
+    $hiddenWidgets = [
+        [
+            'user_widget_id' => 101,
+            'user_id' => $userId,
+            'widget_type' => 'chart',
+            'title' => 'Hidden Widget 1',
+            'icon' => 'fa-chart-line',
+            'icon_color' => '#9C27B0',
+            'column_span' => 3,
+            'row_span' => 2,
+            'grid_position_x' => 0,
+            'grid_position_y' => 0,
+            'is_visible' => false,
+            'widget_data' => [
+                'chart_type' => 'line',
+                'labels' => ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+                'values' => [3.2, 3.8, 4.1, 3.7, 3.2, 2.8, 2.5, 2.1],
+                'unit' => 'kWh'
+            ]
+        ],
+        [
+            'user_widget_id' => 102,
+            'user_id' => $userId,
+            'widget_type' => 'chart',
+            'title' => 'Hidden Widget 2',
+            'icon' => 'fa-database',
+            'icon_color' => '#3F51B5',
+            'column_span' => 3,
+            'row_span' => 2,
+            'grid_position_x' => 3,
+            'grid_position_y' => 0,
+            'is_visible' => false,
+            'widget_data' => [
+                'chart_type' => 'bar',
+                'labels' => ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+                'values' => [5.2, 5.8, 6.1, 5.7, 5.2, 4.8, 4.5, 4.1],
+                'unit' => 'kWh'
+            ]
+        ]
+    ];
     
-    // Get user ID (in a real app, this would come from the session)
-    $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 1; // Default to first user
+    // Return hidden widgets as JSON
+    echo json_encode($hiddenWidgets);
     
-    // Query to get hidden widgets
-    $stmt = $pdo->prepare("
-        SELECT 
-            uw.user_widget_id,
-            uw.user_id,
-            uw.widget_id,
-            w.widget_type,
-            COALESCE(uw.title, w.default_title) AS title,
-            COALESCE(uw.icon, w.default_icon) AS icon,
-            COALESCE(uw.icon_color, w.default_icon_color) AS icon_color,
-            w.description,
-            uw.column_span,
-            uw.row_span,
-            uw.widget_data
-        FROM 
-            user_widgets uw
-        JOIN 
-            widgets w ON uw.widget_id = w.widget_id
-        WHERE 
-            uw.user_id = ? AND
-            uw.is_visible = FALSE
-        ORDER BY 
-            uw.last_updated DESC
-    ");
-    $stmt->execute([$userId]);
-    $widgets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Return widgets as JSON
-    echo json_encode($widgets);
-    
-} catch (PDOException $e) {
-    // Return error as JSON
+} catch (Exception $e) {
+    // Handle any exceptions
     http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode([
+        'error' => 'Error: ' . $e->getMessage(),
+        'details' => [
+            'file' => __FILE__,
+            'line' => $e->getLine()
+        ]
+    ]);
 }
 ?> 

@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Options for both grids
         const gridOptions = {
             column: 12, // 12-column grid
-            cellHeight: 80,
-            margin: 10,
+            cellHeight: 100, // Increased from 80 to 100 for better readability
+            margin: 15, // Increased from 10 to 15 for better spacing
             disableOneColumnMode: false,
             float: false,
             animate: true
@@ -55,10 +55,98 @@ document.addEventListener('DOMContentLoaded', function() {
             dragInOptions: { revert: 'invalid', scroll: false, appendTo: 'body', helper: 'clone' }
         }, '#personalize-grid');
         
-        // Listen for changes to save
+        // Listen for changes to save to localStorage
         personalizeGrid.on('change', function(event, items) {
             console.log('Grid changed:', items);
+            saveWidgetPositionsToLocalStorage();
         });
+    }
+    
+    // Load widget positions from localStorage
+    function loadWidgetPositionsFromLocalStorage() {
+        try {
+            const positionsData = localStorage.getItem('widget_positions');
+            if (positionsData) {
+                return JSON.parse(positionsData);
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading widget positions from localStorage:', error);
+            return null;
+        }
+    }
+    
+    // Create standard widget layout for first-time visitors
+    function createStandardWidgetLayout() {
+        return [
+            // Energy production widgets - first row
+            {
+                user_widget_id: 1,
+                column_span: 4, // Increased from 2 to 4 for better readability
+                row_span: 2,     // Increased from 1 to 2 for better readability
+                grid_position_x: 0,
+                grid_position_y: 0,
+                is_visible: true
+            },
+            {
+                user_widget_id: 2,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 2,     // Increased from 1 to 2
+                grid_position_x: 4,
+                grid_position_y: 0,
+                is_visible: true
+            },
+            {
+                user_widget_id: 3,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 2,     // Increased from 1 to 2
+                grid_position_x: 8,
+                grid_position_y: 0,
+                is_visible: true
+            },
+            // Second row - Temperature widgets
+            {
+                user_widget_id: 4,
+                column_span: 6, // Increased from 3 to 6
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 0,
+                grid_position_y: 2,
+                is_visible: true
+            },
+            {
+                user_widget_id: 5,
+                column_span: 6, // Increased from 3 to 6
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 6,
+                grid_position_y: 2,
+                is_visible: true
+            },
+            // Third row - Storage widgets
+            {
+                user_widget_id: 6,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 3,     // Increased from 1 to 3
+                grid_position_x: 0,
+                grid_position_y: 5,
+                is_visible: true
+            },
+            {
+                user_widget_id: 7,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 3,     // Increased from 1 to 3
+                grid_position_x: 4,
+                grid_position_y: 5,
+                is_visible: true
+            },
+            {
+                user_widget_id: 8,
+                column_span: 4, // Increased from 3 to 4
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 8,
+                grid_position_y: 5,
+                is_visible: true
+            }
+        ];
     }
     
     // Fetch widgets from the PHP API
@@ -74,6 +162,35 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const widgets = await response.json();
             
+            // Apply saved positions from localStorage if available
+            const savedPositions = loadWidgetPositionsFromLocalStorage();
+            if (savedPositions) {
+                widgets.forEach(widget => {
+                    const savedWidget = savedPositions.find(w => w.user_widget_id === widget.user_widget_id);
+                    if (savedWidget) {
+                        widget.grid_position_x = savedWidget.grid_position_x;
+                        widget.grid_position_y = savedWidget.grid_position_y;
+                        widget.column_span = savedWidget.column_span;
+                        widget.row_span = savedWidget.row_span;
+                    }
+                });
+            } else {
+                // Apply standard layout for first-time visitors
+                const standardLayout = createStandardWidgetLayout();
+                widgets.forEach(widget => {
+                    const layoutWidget = standardLayout.find(w => w.user_widget_id === parseInt(widget.user_widget_id));
+                    if (layoutWidget) {
+                        widget.grid_position_x = layoutWidget.grid_position_x;
+                        widget.grid_position_y = layoutWidget.grid_position_y;
+                        widget.column_span = layoutWidget.column_span;
+                        widget.row_span = layoutWidget.row_span;
+                    }
+                });
+                
+                // Save the standard layout to localStorage
+                saveWidgetPositionsToLocalStorage();
+            }
+            
             // Load widgets into the personalize grid
             loadWidgetsToGrid(widgets, personalizeGrid);
             
@@ -82,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error fetching widgets:', error);
-            alert('Er is een fout opgetreden bij het laden van de widgets. Probeer later opnieuw.');
+            // Continue silently without showing an error message
         }
     }
     
@@ -203,20 +320,30 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideWidget(userWidgetId) {
         if (!userWidgetId) return;
         
-        // Find the widget in the grid
-        const widgetEl = document.querySelector(`[data-user-widget-id="${userWidgetId}"]`);
-        if (widgetEl) {
-            // Remove from grid
-            personalizeGrid.removeWidget(widgetEl);
-            
-            // Add to hidden widgets array
-            hiddenWidgetIds.push(userWidgetId);
-            
-            // Sync dashboard
-            syncDashboardWithPersonalize();
-            
-            // Show notification
-            showNotification('Widget hidden. You can add it back from the "Add Widget" menu.');
+        try {
+            // Find the widget in the grid
+            const widgetEl = document.querySelector(`[data-user-widget-id="${userWidgetId}"]`);
+            if (widgetEl) {
+                // Remove from grid
+                personalizeGrid.removeWidget(widgetEl);
+                
+                // Add to hidden widgets array if not already there
+                if (!hiddenWidgetIds.includes(userWidgetId)) {
+                    hiddenWidgetIds.push(userWidgetId);
+                }
+                
+                // Sync dashboard
+                syncDashboardWithPersonalize();
+                
+                // Save to local storage immediately
+                saveWidgetPositionsToLocalStorage();
+                
+                // Show notification
+                showNotification('Widget verborgen. Je kunt deze weer toevoegen via het "Widget toevoegen" menu.', 'success');
+            }
+        } catch (error) {
+            console.error('Error hiding widget:', error);
+            showNotification('Fout bij het verbergen van de widget. Probeer het opnieuw.', 'error');
         }
     }
     
@@ -225,6 +352,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
+        
+        // Remove any existing notifications first
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notif => notif.remove());
         
         document.body.appendChild(notification);
         
@@ -253,96 +384,313 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Function to save widget configuration
-    async function saveWidgetConfiguration() {
+    // Save widget positions to localStorage
+    function saveWidgetPositionsToLocalStorage() {
         try {
-            const userId = typeof USER_ID !== 'undefined' ? USER_ID : 1;
-            
             // Get all widgets from personalize grid
             const nodes = personalizeGrid.getGridItems();
             const widgets = nodes.map(node => {
-                const widgetId = node.getAttribute('data-widget-id');
                 const userWidgetId = node.getAttribute('data-user-widget-id');
-                const widgetType = node.getAttribute('data-widget-type');
                 
                 // Get position data
                 const gridstackNode = node.gridstackNode;
                 
                 return {
-                    user_widget_id: userWidgetId,
-                    widget_id: widgetId,
-                    widget_type: widgetType,
-                    title: node.querySelector('.widget-title').textContent.trim(),
+                    user_widget_id: parseInt(userWidgetId),
                     column_span: gridstackNode.w,
                     row_span: gridstackNode.h,
                     grid_position_x: gridstackNode.x,
                     grid_position_y: gridstackNode.y,
-                    is_visible: true,
-                    widget_data: {}  // This would need to be populated with the actual widget data
+                    is_visible: true
                 };
             });
             
-            // For all hidden widgets, set is_visible to false
-            const hiddenWidgets = hiddenWidgetIds.map(id => ({
-                user_widget_id: id,
+            // Store hidden widgets as well
+            const hiddenWidgetsData = hiddenWidgetIds.map(id => ({
+                user_widget_id: parseInt(id),
                 is_visible: false
             }));
             
-            // Combine visible and hidden widgets
-            const allWidgets = [...widgets, ...hiddenWidgets];
+            // Store all widget positions
+            localStorage.setItem('widget_positions', JSON.stringify([...widgets, ...hiddenWidgetsData]));
             
-            // Send to server
-            const response = await fetch('api/save_widget.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+            console.log('Widget positions saved to localStorage');
+            
+        } catch (error) {
+            console.error('Error saving widget positions to localStorage:', error);
+            showNotification('Fout bij het opslaan van widget posities. Probeer het opnieuw.', 'error');
+        }
+    }
+    
+    // Create content for chart widgets
+    function createChartContent(widget) {
+        return `<div class="chart-container"><canvas id="chart-${widget.user_widget_id}"></canvas></div>`;
+    }
+    
+    // Initialize chart widget
+    function initializeChart(widget) {
+        const chartId = `chart-${widget.user_widget_id}`;
+        const chartCanvas = document.getElementById(chartId);
+        
+        if (!chartCanvas) return;
+        
+        // Ensure proper sizing of the chart container
+        const chartContainer = chartCanvas.closest('.chart-container');
+        if (chartContainer) {
+            chartContainer.style.height = '100%';
+            chartContainer.style.width = '100%';
+            chartContainer.style.padding = '10px';
+            chartContainer.style.boxSizing = 'border-box';
+        }
+        
+        const data = typeof widget.widget_data === 'string' ? JSON.parse(widget.widget_data) : widget.widget_data;
+        
+        // Remove existing chart if it exists
+        if (widgetCharts[chartId]) {
+            widgetCharts[chartId].destroy();
+        }
+        
+        // Check if the data has CSV format (Tijdstip field)
+        if (data && data['Tijdstip']) {
+            // CSV format - use implementation for CSV data
+            // Get time labels - convert from date format to hour:minute
+            const timeLabels = [];
+            // For just this widget, pick a relevant data column to show
+            let dataValues = [];
+            let chartTitle = '';
+            let yAxisLabel = '';
+            
+            // Choose data column based on widget ID to show different data types
+            const widgetIdNum = parseInt(widget.user_widget_id);
+            let selectedColumn = '';
+            
+            switch (widgetIdNum % 8) {
+                case 0:
+                    selectedColumn = 'Zonnepaneelspanning (V)';
+                    chartTitle = 'Zonnepaneelspanning';
+                    yAxisLabel = 'Volt';
+                    break;
+                case 1:
+                    selectedColumn = 'Zonnepaneelstroom (A)';
+                    chartTitle = 'Zonnepaneelstroom';
+                    yAxisLabel = 'Ampère';
+                    break;
+                case 2:
+                    selectedColumn = 'Waterstofproductie (L/u)';
+                    chartTitle = 'Waterstofproductie';
+                    yAxisLabel = 'L/u';
+                    break;
+                case 3:
+                    selectedColumn = 'Stroomverbruik woning (kW)';
+                    chartTitle = 'Stroomverbruik woning';
+                    yAxisLabel = 'kW';
+                    break;
+                case 4:
+                    selectedColumn = 'Buitentemperatuur (°C)';
+                    chartTitle = 'Buitentemperatuur';
+                    yAxisLabel = '°C';
+                    break;
+                case 5:
+                    selectedColumn = 'Binnentemperatuur (°C)';
+                    chartTitle = 'Binnentemperatuur';
+                    yAxisLabel = '°C';
+                    break;
+                case 6:
+                    selectedColumn = 'Accuniveau (%)';
+                    chartTitle = 'Accuniveau';
+                    yAxisLabel = '%';
+                    break;
+                case 7:
+                    selectedColumn = 'Waterstofopslag woning (%)';
+                    chartTitle = 'Waterstofopslag';
+                    yAxisLabel = '%';
+                    break;
+            }
+            
+            // Get the value and ensure it's a number
+            let dataValue = 0;
+            if (data[selectedColumn]) {
+                // Replace comma with dot for correct numeric value
+                dataValue = parseFloat(data[selectedColumn].toString().replace(',', '.'));
+            }
+            
+            // Use time from Tijdstip column as label
+            const timeLabel = data['Tijdstip'] ? data['Tijdstip'].substring(11, 16) : '00:00'; // Extract HH:MM from time
+            
+            // Create chart with CSV data
+            widgetCharts[chartId] = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: [timeLabel],
+                    datasets: [{
+                        label: chartTitle,
+                        data: [dataValue],
+                        borderColor: widget.icon_color || '#4CAF50',
+                        backgroundColor: convertHexToRGBA(widget.icon_color || '#4CAF50', 0.5),
+                        borderWidth: 1
+                    }]
                 },
-                body: JSON.stringify({
-                    user_id: userId,
-                    widgets: allWidgets,
-                    removed_widget_ids: removedWidgetIds
-                })
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: yAxisLabel,
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            ticks: { 
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
             });
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            // Update widget title
+            const titleEl = document.querySelector(`[data-user-widget-id="${widget.user_widget_id}"] .widget-title`);
+            if (titleEl) {
+                titleEl.innerHTML = `<i class="fas ${widget.icon}" style="color: ${widget.icon_color};"></i> ${chartTitle}`;
             }
+        } else {
+            // Fallback for unknown format or missing data
+            widgetCharts[chartId] = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Sample Data',
+                        data: [4.2, 3.8, 5.1, 6.7, 4.9, 3.5],
+                        borderColor: widget.icon_color || '#4CAF50',
+                        backgroundColor: convertHexToRGBA(widget.icon_color || '#4CAF50', 0.1),
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: false,
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: widget.title,
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // Helper function to convert hex color to rgba with opacity
+    function convertHexToRGBA(hex, opacity) {
+        if (!hex) return `rgba(76, 175, 80, ${opacity})`; // Default green as fallback
+        
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+    
+    // Function to save widget configuration
+    async function saveWidgetConfiguration() {
+        try {
+            // Save widgets to localStorage
+            saveWidgetPositionsToLocalStorage();
             
-            const result = await response.json();
+            // Show success notification
+            showNotification('Dashboard configuratie succesvol opgeslagen!', 'success');
             
-            if (result.success) {
-                showNotification('Dashboard saved successfully!', 'success');
-                
-                // Clear the removed and hidden widgets arrays
-                removedWidgetIds.length = 0;
-                hiddenWidgetIds.length = 0;
-                
-                // Refresh widgets
-                fetchWidgets();
-            } else {
-                throw new Error(result.error || 'Unknown error');
-            }
+            // Clear the removed and hidden widgets arrays (we're keeping track of them in localStorage)
+            removedWidgetIds.length = 0;
             
         } catch (error) {
             console.error('Error saving widgets:', error);
-            showNotification('Error saving dashboard. Please try again.', 'error');
+            showNotification('Fout bij het opslaan van dashboard configuratie. Probeer het opnieuw.', 'error');
         }
     }
     
     // Load hidden widgets into the Add Widget modal
     async function loadHiddenWidgets() {
         try {
-            // Get user ID
-            const userId = typeof USER_ID !== 'undefined' ? USER_ID : 1;
+            // Get hidden widgets from localStorage
+            const savedPositions = loadWidgetPositionsFromLocalStorage();
+            let hiddenWidgets = [];
             
-            // Fetch hidden widgets
-            const response = await fetch(`api/hidden_widgets.php?user_id=${userId}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            if (savedPositions) {
+                // Filter out widgets with is_visible=false
+                hiddenWidgets = savedPositions.filter(widget => widget.is_visible === false)
+                    .map(widget => {
+                        // Create dummy data for hidden widgets
+                        return {
+                            user_widget_id: widget.user_widget_id,
+                            widget_id: widget.user_widget_id % 8 + 1, // Dummy widget ID
+                            user_id: 1,
+                            widget_type: 'chart',
+                            title: `Hidden Widget ${widget.user_widget_id}`,
+                            icon: 'fa-chart-line',
+                            icon_color: '#4CAF50',
+                            description: 'This widget was hidden',
+                            is_visible: false
+                        };
+                    });
             }
-            
-            const hiddenWidgets = await response.json();
             
             // Get the container for hidden widgets
             const hiddenWidgetsContainer = document.querySelector('.hidden-widgets-container');
@@ -404,41 +752,35 @@ document.addEventListener('DOMContentLoaded', function() {
     // Restore a hidden widget
     async function restoreWidget(userWidgetId) {
         try {
-            // Get user ID
-            const userId = typeof USER_ID !== 'undefined' ? USER_ID : 1;
+            // Get saved positions from localStorage
+            const savedPositions = loadWidgetPositionsFromLocalStorage();
             
-            // Send request to restore widget
-            const response = await fetch('api/restore_widget.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    user_widget_id: userWidgetId
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                // Close modal
-                const modal = document.getElementById('widget-selection-modal');
-                if (modal) {
-                    modal.style.display = 'none';
+            if (savedPositions) {
+                // Find the hidden widget
+                const widgetIndex = savedPositions.findIndex(w => w.user_widget_id === userWidgetId && w.is_visible === false);
+                
+                if (widgetIndex >= 0) {
+                    // Set widget to visible
+                    savedPositions[widgetIndex].is_visible = true;
+                    
+                    // Save updated positions
+                    localStorage.setItem('widget_positions', JSON.stringify(savedPositions));
+                    
+                    // Remove from hidden widgets array
+                    hiddenWidgetIds = hiddenWidgetIds.filter(id => id !== userWidgetId);
+                    
+                    // Close modal
+                    const modal = document.getElementById('widget-selection-modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    
+                    // Refresh widgets
+                    fetchWidgets();
+                    
+                    // Show notification
+                    showNotification('Widget restored successfully!', 'success');
                 }
-                
-                // Refresh widgets
-                fetchWidgets();
-                
-                // Show notification
-                showNotification('Widget restored successfully!', 'success');
-            } else {
-                throw new Error(result.error || 'Unknown error');
             }
             
         } catch (error) {
@@ -450,11 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add a new widget from available widget types
     async function addNewWidget(widgetId) {
         try {
-            // Get user ID
-            const userId = typeof USER_ID !== 'undefined' ? USER_ID : 1;
-            
             // Find an empty position for the new widget
-            // Start with position 0,0 and check if any widget is already there
             let gridX = 0;
             let gridY = 0;
             
@@ -484,46 +822,51 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const widgetDetails = await response.json();
             
-            // Create a new user widget
-            const newWidgetResponse = await fetch('api/add_widget.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    widget_id: widgetId,
-                    title: widgetDetails.default_title,
-                    icon: widgetDetails.default_icon,
-                    icon_color: widgetDetails.default_icon_color,
-                    column_span: widgetDetails.default_column_span,
-                    row_span: widgetDetails.default_row_span,
-                    grid_position_x: gridX,
-                    grid_position_y: gridY
-                })
-            });
+            // Generate a new user widget ID
+            const newUserWidgetId = Date.now(); // Use timestamp as a unique ID
             
-            if (!newWidgetResponse.ok) {
-                throw new Error(`HTTP error! Status: ${newWidgetResponse.status}`);
+            // Create a dummy widget
+            const newWidget = {
+                user_widget_id: newUserWidgetId,
+                user_id: 1,
+                widget_id: widgetId,
+                widget_type: 'chart',
+                title: widgetDetails.default_title,
+                icon: widgetDetails.default_icon,
+                icon_color: widgetDetails.default_icon_color,
+                column_span: widgetDetails.default_column_span,
+                row_span: widgetDetails.default_row_span,
+                grid_position_x: gridX,
+                grid_position_y: gridY,
+                is_visible: true,
+                widget_data: widgetDetails.default_data || {}
+            };
+            
+            // Create widget element
+            const widgetEl = createWidgetGridItem(newWidget);
+            
+            // Add to grid
+            personalizeGrid.addWidget(widgetEl);
+            
+            // Initialize chart
+            if (newWidget.widget_type === 'chart') {
+                setTimeout(() => initializeChart(newWidget), 100);
             }
             
-            const result = await newWidgetResponse.json();
+            // Save to localStorage
+            saveWidgetPositionsToLocalStorage();
             
-            if (result.success) {
-                // Close modal
-                const modal = document.getElementById('widget-selection-modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-                
-                // Refresh widgets
-                fetchWidgets();
-                
-                // Show notification
-                showNotification('Widget added successfully!', 'success');
-            } else {
-                throw new Error(result.error || 'Unknown error');
+            // Close modal
+            const modal = document.getElementById('widget-selection-modal');
+            if (modal) {
+                modal.style.display = 'none';
             }
+            
+            // Sync dashboard
+            syncDashboardWithPersonalize();
+            
+            // Show notification
+            showNotification('Widget added successfully!', 'success');
             
         } catch (error) {
             console.error('Error adding widget:', error);
@@ -634,6 +977,35 @@ document.addEventListener('DOMContentLoaded', function() {
             saveChangesBtn.addEventListener('click', saveWidgetConfiguration);
         }
     }
+    
+    // Function to reset dashboard to default by clearing localStorage
+    function resetDashboard() {
+        try {
+            // Clear localStorage items related to the dashboard
+            localStorage.removeItem('widget_positions');
+            
+            // Reset arrays
+            hiddenWidgetIds.length = 0;
+            removedWidgetIds.length = 0;
+            
+            // Show notification
+            showNotification('Dashboard reset succesvol. De pagina wordt nu herladen.', 'success');
+            
+            // Reload the page after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+            
+            return true;
+        } catch (error) {
+            console.error('Error resetting dashboard:', error);
+            showNotification('Fout bij het resetten van dashboard. Probeer de pagina handmatig te herladen.', 'error');
+            return false;
+        }
+    }
+    
+    // Make reset function available globally for troubleshooting
+    window.resetDashboard = resetDashboard;
     
     // Initialize when DOM is loaded
     init();

@@ -2,23 +2,18 @@
 // Start session
 session_start();
 
-// Database connection settings
-$host = 'localhost';
-$dbname = 'seddata';
-$username = 'root';
-$password = '';
-
 // Default user ID (in a real app, this would come from the session)
-$userId = 1;
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
 
-// Set current active view based on user preference or default to dashboard
-$activeView = isset($_GET['view']) ? $_GET['view'] : 'dashboard';
+// Check which view to show
+$activeView = isset($_GET['view']) && $_GET['view'] === 'personalize' ? 'personalize' : 'dashboard';
 
-// User info placeholder (would be retrieved from database in a real app)
+// Dummy user info for demo
 $userInfo = [
-    'name' => 'Alex Morgan',
-    'plan' => 'Premium Plan',
-    'avatar' => 'https://via.placeholder.com/40'
+    'name' => 'Demo User',
+    'email' => 'demo@example.com',
+    'plan' => 'Premium',
+    'avatar' => 'https://ui-avatars.com/api/?name=Demo+User&background=random'
 ];
 ?>
 <!DOCTYPE html>
@@ -40,6 +35,7 @@ $userInfo = [
     
     <!-- Custom scripts -->
     <script src="widget-grid.js"></script>
+    <script src="script.js"></script>
 </head>
 <body>
     <div class="container">

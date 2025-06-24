@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // GridStack options
         const gridOptions = {
             column: GRID_COLUMNS,
-            cellHeight: CELL_SIZE,
-            margin: GRID_GAP,
+            cellHeight: 100, // Increased from 80 to 100 for better readability
+            margin: 15, // Increased from 10 to 15 for better spacing
             disableOneColumnMode: false,
             float: false,
             animate: true
@@ -116,20 +116,100 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`Loaded ${widgets.length} widgets`);
             
+            // Check if we have saved positions in localStorage
+            let savedPositions = null;
+            try {
+                const positionsData = localStorage.getItem('widget_positions');
+                if (positionsData) {
+                    savedPositions = JSON.parse(positionsData);
+                }
+            } catch (error) {
+                console.error('Error loading widget positions from localStorage:', error);
+                // Clear potentially corrupted localStorage data
+                localStorage.removeItem('widget_positions');
+            }
+            
+            // If we have widgets but no saved layout, apply default layout
+            if (widgets.length > 0 && !savedPositions) {
+                console.log('No saved layout found, applying standard layout');
+                const defaultWidgets = createDefaultWidgets();
+                
+                // Match existing widgets with default layout positions
+                widgets.forEach(widget => {
+                    const defaultWidget = defaultWidgets.find(dw => dw.user_widget_id === widget.user_widget_id);
+                    if (defaultWidget) {
+                        widget.grid_position_x = defaultWidget.grid_position_x;
+                        widget.grid_position_y = defaultWidget.grid_position_y;
+                        widget.column_span = defaultWidget.column_span;
+                        widget.row_span = defaultWidget.row_span;
+                    }
+                });
+                
+                // Save this layout to localStorage
+                const layoutToSave = widgets.map(widget => ({
+                    user_widget_id: widget.user_widget_id,
+                    column_span: widget.column_span,
+                    row_span: widget.row_span,
+                    grid_position_x: widget.grid_position_x,
+                    grid_position_y: widget.grid_position_y,
+                    is_visible: true
+                }));
+                
+                localStorage.setItem('widget_positions', JSON.stringify(layoutToSave));
+                console.log('Standard layout saved to localStorage');
+                
+                // Load these widgets to grid
+                loadWidgetsToGrid(widgets);
+            } 
             // If no widgets are found, create default widgets
-            if (widgets.length === 0) {
+            else if (widgets.length === 0) {
                 console.log('No widgets found, creating default widgets');
                 const defaultWidgets = createDefaultWidgets();
                 loadWidgetsToGrid(defaultWidgets);
-            } else {
-                // Load widgets into the grid
-                loadWidgetsToGrid(widgets);
+            } 
+            // Otherwise, load the widgets we got
+            else {
+                // Apply saved positions if available
+                if (savedPositions) {
+                    widgets.forEach(widget => {
+                        const savedWidget = savedPositions.find(w => 
+                            w.user_widget_id === parseInt(widget.user_widget_id) && w.is_visible === true);
+                        if (savedWidget) {
+                            widget.grid_position_x = savedWidget.grid_position_x;
+                            widget.grid_position_y = savedWidget.grid_position_y;
+                            widget.column_span = savedWidget.column_span;
+                            widget.row_span = savedWidget.row_span;
+                        }
+                    });
+                    
+                    // Filter out hidden widgets
+                    const visibleWidgets = widgets.filter(widget => {
+                        const savedWidget = savedPositions.find(w => 
+                            w.user_widget_id === parseInt(widget.user_widget_id));
+                        return !savedWidget || savedWidget.is_visible !== false;
+                    });
+                    
+                    // Update hidden widgets array
+                    hiddenWidgetIds = savedPositions
+                        .filter(w => w.is_visible === false)
+                        .map(w => w.user_widget_id.toString());
+                    
+                    // Load visible widgets into the grid
+                    loadWidgetsToGrid(visibleWidgets);
+                } else {
+                    // Load all widgets into the grid
+                    loadWidgetsToGrid(widgets);
+                }
             }
         } catch (error) {
             console.error('Error fetching widgets:', error);
             
-            // Show error notification
-            showNotification('Er is een fout opgetreden bij het laden van de widgets. Probeer later opnieuw.', 'error');
+            // Try to clear localStorage to start fresh
+            try {
+                localStorage.removeItem('widget_positions');
+            } catch (e) {
+                console.error('Error clearing localStorage:', e);
+            }
             
             // Load default widgets instead of an empty grid
             const defaultWidgets = createDefaultWidgets();
@@ -140,16 +220,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create default widgets when database fails
     function createDefaultWidgets() {
         return [
+            // Row 1: Statistics widgets
             {
                 title: "Zonne-energie Productie",
                 icon: "fa-sun",
-                icon_color: "green",
+                icon_color: "#4CAF50",
                 widget_type: "stat-card",
-                column_span: 1,
-                row_span: 1,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 2,     // Increased from 1 to 2
                 grid_position_x: 0,
                 grid_position_y: 0,
-                user_widget_id: "default-1",
+                user_widget_id: "1",
                 widget_data: {
                     value: "24.8 kWh",
                     secondary_value: "+12% vs gisteren",
@@ -159,13 +240,13 @@ document.addEventListener('DOMContentLoaded', function() {
             {
                 title: "Stroomverbruik",
                 icon: "fa-bolt",
-                icon_color: "red",
+                icon_color: "#E91E63",
                 widget_type: "stat-card",
-                column_span: 1,
-                row_span: 1,
-                grid_position_x: 1,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 2,     // Increased from 1 to 2
+                grid_position_x: 4,
                 grid_position_y: 0,
-                user_widget_id: "default-2",
+                user_widget_id: "2",
                 widget_data: {
                     value: "18.2 kWh",
                     secondary_value: "-15% vs gisteren",
@@ -175,30 +256,96 @@ document.addEventListener('DOMContentLoaded', function() {
             {
                 title: "Batterij Status",
                 icon: "fa-battery-three-quarters",
-                icon_color: "blue",
+                icon_color: "#2196F3",
                 widget_type: "stat-card",
-                column_span: 1,
-                row_span: 1,
-                grid_position_x: 2,
+                column_span: 4, // Increased from 2 to 4
+                row_span: 2,     // Increased from 1 to 2
+                grid_position_x: 8,
                 grid_position_y: 0,
-                user_widget_id: "default-3",
+                user_widget_id: "3",
                 widget_data: {
                     value: "78%",
                     secondary_value: "6.2 kWh opgeslagen",
                     is_positive: null
                 }
             },
+            
+            // Row 2-3: Charts for energy data
             {
                 title: "Energie Productie",
+                icon: "fa-chart-line",
+                icon_color: "#4CAF50",
                 widget_type: "chart",
-                column_span: 2,
-                row_span: 1,
+                column_span: 6, // Increased from 3 to 6
+                row_span: 3,     // Increased from 2 to 3
                 grid_position_x: 0,
-                grid_position_y: 1,
-                user_widget_id: "default-4",
+                grid_position_y: 2,
+                user_widget_id: "4",
                 widget_data: {
                     chart_type: "line",
-                    time_period: "day"
+                    data_source: "solar_production"
+                }
+            },
+            {
+                title: "Energieverbruik",
+                icon: "fa-chart-line", 
+                icon_color: "#E91E63",
+                widget_type: "chart",
+                column_span: 6, // Increased from 3 to 6
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 6,
+                grid_position_y: 2,
+                user_widget_id: "5",
+                widget_data: {
+                    chart_type: "line",
+                    data_source: "consumption"
+                }
+            },
+            
+            // Row 4-5: Additional charts
+            {
+                title: "Opslagstatus",
+                icon: "fa-chart-bar",
+                icon_color: "#2196F3", 
+                widget_type: "chart",
+                column_span: 4, // Increased from 3 to 4
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 0,
+                grid_position_y: 5,
+                user_widget_id: "6",
+                widget_data: {
+                    chart_type: "bar",
+                    data_source: "storage_levels"
+                }
+            },
+            {
+                title: "Temperatuur",
+                icon: "fa-temperature-high",
+                icon_color: "#FF5722",
+                widget_type: "chart",
+                column_span: 4, // Changed size to match layout
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 4,
+                grid_position_y: 5,
+                user_widget_id: "7",
+                widget_data: {
+                    chart_type: "line",
+                    data_source: "temperature"
+                }
+            },
+            {
+                title: "Waterstofproductie",
+                icon: "fa-flask",
+                icon_color: "#FF9800",
+                widget_type: "chart",
+                column_span: 4, // Changed size to match layout
+                row_span: 3,     // Increased from 2 to 3
+                grid_position_x: 8,
+                grid_position_y: 5,
+                user_widget_id: "8",
+                widget_data: {
+                    chart_type: "line",
+                    data_source: "hydrogen_production"
                 }
             }
         ];
@@ -209,8 +356,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear existing widgets
         widgetGrid.removeAll();
         
-        // Add widgets
-        widgets.forEach(widget => {
+        // Add only visible widgets
+        widgets.filter(widget => widget.is_visible !== false).forEach(widget => {
             const widgetNode = createWidgetGridItem(widget);
             widgetGrid.addWidget(widgetNode);
             
@@ -411,106 +558,355 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!chartCanvas) return;
         
+        // Ensure proper sizing of the chart container
+        const chartContainer = chartCanvas.closest('.chart-container');
+        if (chartContainer) {
+            chartContainer.style.height = '100%';
+            chartContainer.style.width = '100%';
+            chartContainer.style.padding = '10px';
+            chartContainer.style.boxSizing = 'border-box';
+        }
+        
+        // Parse data if needed
         const data = typeof widget.widget_data === 'string' ? JSON.parse(widget.widget_data) : widget.widget_data;
-        const chartType = data.chart_type || 'line';
         
         // Remove existing chart if it exists
         if (widgetCharts[chartId]) {
             widgetCharts[chartId].destroy();
         }
         
-        // Sample data - in a real app this would come from an API
-        let chartData, chartOptions;
-        
-        if (chartType === 'line') {
-            // Sample line chart data for energy production
-            chartData = {
-                labels: ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
-                datasets: [{
-                    label: 'kWh',
-                    data: [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
-                    borderColor: '#4CAF50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            };
-            
-            chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+        // Check if this is data with labels and values arrays (from widget_details.php)
+        if (data && Array.isArray(data.labels) && Array.isArray(data.values)) {
+            // Create chart with labels and values data
+            widgetCharts[chartId] = new Chart(chartCanvas, {
+                type: data.chart_type || 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: widget.title,
+                        data: data.values,
+                        borderColor: widget.icon_color || '#4CAF50',
+                        backgroundColor: convertHexToRGBA(widget.icon_color || '#4CAF50', 0.1),
+                        tension: 0.4,
+                        fill: true
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: '#666' }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: widget.title,
+                            font: { size: 16 }
+                        }
                     },
-                    x: {
-                        ticks: { color: '#666' }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: data.unit || '',
+                                font: { size: 14 }
+                            },
+                            ticks: { color: '#666', font: { size: 12 } }
+                        },
+                        x: { ticks: { color: '#666', font: { size: 12 } } }
                     }
                 }
-            };
-        } else if (chartType === 'bar') {
-            // Sample bar chart data for consumption vs production
-            chartData = {
-                labels: ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
-                datasets: [
-                    {
-                        label: 'Productie',
-                        data: [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
-                        backgroundColor: 'rgba(76, 175, 80, 0.7)'
-                    },
-                    {
-                        label: 'Verbruik',
-                        data: [2.1, 1.5, 1.2, 1.5, 1.8, 2.2, 3.0, 3.5],
-                        backgroundColor: 'rgba(233, 30, 99, 0.7)'
-                    }
-                ]
-            };
-            
-            chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top' }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: '#666' }
-                    },
-                    x: {
-                        ticks: { color: '#666' }
-                    }
-                }
-            };
+            });
+            return;
         }
         
-        // Create new chart
-        widgetCharts[chartId] = new Chart(chartCanvas, {
-            type: chartType,
-            data: chartData,
-            options: chartOptions
-        });
+        // Check if this is CSV data (has a Tijdstip field)
+        if (data && data['Tijdstip']) {
+            // CSV format - create a chart from the CSV data
+            
+            // Choose a data column based on widget ID to show different types of data
+            const widgetIdNum = parseInt(widget.user_widget_id);
+            let selectedColumn = '';
+            let chartTitle = '';
+            let yAxisLabel = '';
+            
+            switch (widgetIdNum % 8) {
+                case 0:
+                    selectedColumn = 'Zonnepaneelspanning (V)';
+                    chartTitle = 'Zonnepaneelspanning';
+                    yAxisLabel = 'Volt';
+                    break;
+                case 1:
+                    selectedColumn = 'Zonnepaneelstroom (A)';
+                    chartTitle = 'Zonnepaneelstroom';
+                    yAxisLabel = 'Ampère';
+                    break;
+                case 2:
+                    selectedColumn = 'Waterstofproductie (L/u)';
+                    chartTitle = 'Waterstofproductie';
+                    yAxisLabel = 'L/u';
+                    break;
+                case 3:
+                    selectedColumn = 'Stroomverbruik woning (kW)';
+                    chartTitle = 'Stroomverbruik woning';
+                    yAxisLabel = 'kW';
+                    break;
+                case 4:
+                    selectedColumn = 'Buitentemperatuur (°C)';
+                    chartTitle = 'Buitentemperatuur';
+                    yAxisLabel = '°C';
+                    break;
+                case 5:
+                    selectedColumn = 'Binnentemperatuur (°C)';
+                    chartTitle = 'Binnentemperatuur';
+                    yAxisLabel = '°C';
+                    break;
+                case 6:
+                    selectedColumn = 'Accuniveau (%)';
+                    chartTitle = 'Accuniveau';
+                    yAxisLabel = '%';
+                    break;
+                case 7:
+                    selectedColumn = 'Waterstofopslag woning (%)';
+                    chartTitle = 'Waterstofopslag';
+                    yAxisLabel = '%';
+                    break;
+            }
+            
+            // Get value from the selected column
+            let dataValue = 0;
+            if (data[selectedColumn]) {
+                // Replace comma with dot for correct numeric value
+                dataValue = parseFloat(data[selectedColumn].toString().replace(',', '.'));
+            }
+            
+            // Use time from Tijdstip column as label
+            const timeLabel = data['Tijdstip'] ? data['Tijdstip'].substring(11, 16) : '00:00'; // Extract HH:MM from time
+            
+            // Create chart with CSV data
+            widgetCharts[chartId] = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: [timeLabel],
+                    datasets: [{
+                        label: chartTitle,
+                        data: [dataValue],
+                        borderColor: widget.icon_color || '#4CAF50',
+                        backgroundColor: convertHexToRGBA(widget.icon_color || '#4CAF50', 0.5),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: yAxisLabel,
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update widget title
+            const titleEl = document.querySelector(`[data-user-widget-id="${widget.user_widget_id}"] .widget-title`);
+            if (titleEl) {
+                titleEl.innerHTML = `<i class="fas ${widget.icon}" style="color: ${widget.icon_color};"></i> ${chartTitle}`;
+            }
+        } else {
+            // Default chart configuration
+            let chartData, chartOptions;
+            const chartType = data && data.chart_type ? data.chart_type : 'line';
+            
+            if (chartType === 'line') {
+                // Sample line chart data for energy production
+                chartData = {
+                    labels: ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+                    datasets: [{
+                        label: 'kWh',
+                        data: [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                };
+                
+                chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: false,
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: widget.title,
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                };
+            } else if (chartType === 'bar') {
+                // Sample bar chart data for consumption vs production
+                chartData = {
+                    labels: ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+                    datasets: [
+                        {
+                            label: 'Productie',
+                            data: [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
+                            backgroundColor: 'rgba(76, 175, 80, 0.7)'
+                        },
+                        {
+                            label: 'Verbruik',
+                            data: [2.1, 1.5, 1.2, 1.5, 1.8, 2.2, 3.0, 3.5],
+                            backgroundColor: 'rgba(233, 30, 99, 0.7)'
+                        }
+                    ]
+                };
+                
+                chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: widget.title,
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                };
+            }
+            
+            // Create new chart
+            widgetCharts[chartId] = new Chart(chartCanvas, {
+                type: chartType,
+                data: chartData,
+                options: chartOptions
+            });
+        }
+    }
+    
+    // Helper function to convert hex color to rgba with opacity
+    function convertHexToRGBA(hex, opacity) {
+        if (!hex) return `rgba(76, 175, 80, ${opacity})`; // Default green as fallback
+        
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
     
     // Hide a widget
     function hideWidget(userWidgetId) {
         if (!userWidgetId) return;
         
-        // Find the widget in the grid
-        const widgetEl = document.querySelector(`[data-user-widget-id="${userWidgetId}"]`);
-        if (widgetEl) {
-            // Remove from grid
-            widgetGrid.removeWidget(widgetEl);
-            
-            // Add to hidden widgets array
-            hiddenWidgetIds.push(userWidgetId);
-            
-            // Show notification
-            showNotification('Widget hidden. You can add it back from the "Add Widget" menu.');
+        try {
+            // Find the widget in the grid
+            const widgetEl = document.querySelector(`[data-user-widget-id="${userWidgetId}"]`);
+            if (widgetEl) {
+                // Remove from grid
+                widgetGrid.removeWidget(widgetEl);
+                
+                // Add to hidden widgets array if not already there
+                if (!hiddenWidgetIds.includes(userWidgetId)) {
+                    hiddenWidgetIds.push(userWidgetId);
+                }
+                
+                // Save to localStorage
+                saveWidgetConfiguration();
+                
+                // Show notification
+                showNotification('Widget verborgen. Je kunt deze weer toevoegen via het "Widget toevoegen" menu.', 'success');
+            }
+        } catch (error) {
+            console.error('Error hiding widget:', error);
+            showNotification('Fout bij het verbergen van de widget. Probeer het opnieuw.', 'error');
         }
     }
     
@@ -548,11 +944,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Save widget configuration to the server
+    // Save widget configuration to localStorage
     async function saveWidgetConfiguration() {
         try {
-            const userId = typeof USER_ID !== 'undefined' ? USER_ID : 1;
-            
             // Get all visible widgets from the grid
             const nodes = widgetGrid.getGridItems();
             const widgets = [];
@@ -566,15 +960,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (userWidgetId) {
                     // Extract grid position data from the node attributes
                     let widget = {
-                        user_widget_id: userWidgetId.startsWith('default-') ? 0 : parseInt(userWidgetId),
-                        widget_id: widgetId ? parseInt(widgetId) : 0,
-                        title: node.querySelector('.widget-title').textContent.trim(),
+                        user_widget_id: userWidgetId.startsWith('default-') ? parseInt(userWidgetId.replace('default-', '')) : parseInt(userWidgetId),
                         column_span: parseInt(node.getAttribute('gs-w')),
                         row_span: parseInt(node.getAttribute('gs-h')),
                         grid_position_x: parseInt(node.getAttribute('gs-x')),
                         grid_position_y: parseInt(node.getAttribute('gs-y')),
-                        is_visible: true,
-                        widget_data: {} // Would extract actual widget data in a real implementation
+                        is_visible: true
                     };
                     
                     // Check if there are pending changes for this widget
@@ -589,54 +980,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         widget.row_span = changes.row_span;
                     }
                     
-                    // Skip default widgets that don't have a real widget_id
-                    if (userWidgetId.startsWith('default-') && !widgetId) {
-                        console.log(`Skipping default widget ${userWidgetId} without a real widget_id`);
-                        return;
-                    }
-                    
                     widgets.push(widget);
                 }
             });
             
-            // Log what we're about to save
-            console.log('Saving widgets:', widgets);
+            // Store hidden widgets as well
+            const hiddenWidgetsData = hiddenWidgetIds.map(id => ({
+                user_widget_id: parseInt(id),
+                is_visible: false
+            }));
             
-            // Prepare data to send to the server
-            const data = {
-                user_id: userId,
-                widgets: widgets,
-                removed_widget_ids: removedWidgetIds,
-                hidden_widget_ids: hiddenWidgetIds
-            };
+            // Store all widget positions in localStorage
+            localStorage.setItem('widget_positions', JSON.stringify([...widgets, ...hiddenWidgetsData]));
             
-            // Send to the server
-            const response = await fetch('api/save_widget.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            console.log('Save result:', result);
-            
-            // Clear arrays and pending changes after successful save
-            removedWidgetIds.length = 0;
-            hiddenWidgetIds.length = 0;
+            // Clear pending changes
             Object.keys(pendingChanges).forEach(key => delete pendingChanges[key]);
             
             // Show success notification
-            showNotification('Dashboard configuration saved successfully!', 'success');
+            showNotification('Dashboard configuratie opgeslagen!', 'success');
             
+            return true;
         } catch (error) {
             console.error('Error saving widget configuration:', error);
-            showNotification('Error saving dashboard configuration. Please try again.', 'error');
+            showNotification('Fout bij het opslaan van dashboard configuratie. Probeer het opnieuw.', 'error');
+            return false;
         }
     }
     
@@ -645,6 +1012,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
+        
+        // Remove any existing notifications first
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notif => notif.remove());
         
         document.body.appendChild(notification);
         
@@ -792,69 +1163,29 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const modal = document.getElementById('widget-selection-modal');
             
-            // Get widget details
-            const response = await fetch(`api/widget_details.php?widget_id=${widgetId}`);
+            // Get widget details from API
+            const response = await fetch(`api/add_widget.php?widget_id=${widgetId}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             
-            const widgetDetails = await response.json();
+            // Parse the response to get the new widget data
+            const newWidget = await response.json();
             
-            // Create a new widget with default properties
-            const newWidget = {
-                widget_id: widgetDetails.widget_id,
-                title: widgetDetails.default_title,
-                icon: widgetDetails.default_icon,
-                icon_color: widgetDetails.default_icon_color,
-                widget_type: widgetDetails.widget_type,
-                column_span: widgetDetails.default_column_span,
-                row_span: widgetDetails.default_row_span,
-                grid_position_x: 0, // GridStack will find a position
-                grid_position_y: 0, // GridStack will find a position
-                widget_data: {},
-                is_visible: true
-            };
-            
-            // Set widget data based on type
-            switch (widgetDetails.widget_type) {
-                case 'stat-card':
-                    newWidget.widget_data = {
-                        value: '0',
-                        secondary_value: 'New widget',
-                        is_positive: null
-                    };
-                    break;
-                case 'chart':
-                    newWidget.widget_data = {
-                        chart_type: 'line',
-                        time_period: 'day'
-                    };
-                    break;
-                case 'notifications':
-                    newWidget.widget_data = {
-                        notifications: [
-                            {
-                                type: 'info',
-                                icon: 'fa-info-circle',
-                                title: 'New Notification Widget',
-                                description: 'Configure this widget to show your notifications'
-                            }
-                        ]
-                    };
-                    break;
-            }
-            
-            // Create the widget element
+            // Create a grid item for the new widget
             const widgetNode = createWidgetGridItem(newWidget);
             
-            // Add to grid
+            // Add the widget to the grid
             widgetGrid.addWidget(widgetNode);
             
-            // Initialize chart if needed
+            // Initialize chart if it's a chart widget
             if (newWidget.widget_type === 'chart') {
                 setTimeout(() => initializeChart(newWidget), 100);
             }
+            
+            // Save the updated configuration
+            saveWidgetConfiguration();
             
             // Close the modal
             if (modal) {
@@ -862,50 +1193,80 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Show notification
-            showNotification('New widget added! Save your changes to make it permanent.', 'success');
+            showNotification('Widget toegevoegd', 'success');
+            
         } catch (error) {
-            console.error('Error adding new widget:', error);
-            showNotification('Error adding new widget. Please try again.', 'error');
+            console.error('Error adding widget:', error);
+            showNotification('Fout bij toevoegen van widget. Probeer het opnieuw.', 'error');
         }
     }
     
     // Restore a hidden widget
     async function restoreWidget(userWidgetId) {
         try {
-            const response = await fetch(`api/restore_widget.php?user_widget_id=${userWidgetId}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            // Remove from hidden widgets array
+            const index = hiddenWidgetIds.indexOf(userWidgetId);
+            if (index !== -1) {
+                hiddenWidgetIds.splice(index, 1);
             }
             
-            const result = await response.json();
-            
-            if (result.success) {
-                // Remove from hidden widgets array
-                const index = hiddenWidgetIds.indexOf(parseInt(userWidgetId));
-                if (index !== -1) {
-                    hiddenWidgetIds.splice(index, 1);
+            // Update localStorage to mark the widget as visible
+            const savedPositions = localStorage.getItem('widget_positions');
+            if (savedPositions) {
+                const positions = JSON.parse(savedPositions);
+                const widgetIndex = positions.findIndex(w => w.user_widget_id.toString() === userWidgetId.toString());
+                
+                if (widgetIndex !== -1) {
+                    positions[widgetIndex].is_visible = true;
+                    localStorage.setItem('widget_positions', JSON.stringify(positions));
                 }
-                
-                // Refresh widgets
-                fetchWidgets();
-                
-                // Close the modal
-                const modal = document.getElementById('widget-selection-modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-                
-                // Show notification
-                showNotification('Widget restored successfully!', 'success');
-            } else {
-                throw new Error(result.message || 'Failed to restore widget');
             }
+            
+            // Refresh widgets
+            fetchWidgets();
+            
+            // Close the modal
+            const modal = document.getElementById('widget-selection-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
+            // Show notification
+            showNotification('Widget restored successfully!', 'success');
         } catch (error) {
             console.error('Error restoring widget:', error);
             showNotification('Error restoring widget. Please try again.', 'error');
         }
     }
+    
+    // Reset dashboard to default by clearing localStorage
+    function resetDashboard() {
+        try {
+            // Clear localStorage items related to the dashboard
+            localStorage.removeItem('widget_positions');
+            
+            // Reset arrays
+            hiddenWidgetIds.length = 0;
+            Object.keys(pendingChanges).forEach(key => delete pendingChanges[key]);
+            
+            // Show notification
+            showNotification('Dashboard reset succesvol. De pagina wordt nu herladen.', 'success');
+            
+            // Reload the page after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+            
+            return true;
+        } catch (error) {
+            console.error('Error resetting dashboard:', error);
+            showNotification('Fout bij het resetten van dashboard. Probeer de pagina handmatig te herladen.', 'error');
+            return false;
+        }
+    }
+    
+    // Make reset function available globally for troubleshooting
+    window.resetDashboard = resetDashboard;
     
     // Initialize everything when the DOM is loaded
     initWidgetGrid();

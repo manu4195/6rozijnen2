@@ -1,76 +1,64 @@
 <?php
-// Database connection settings
-$host = 'localhost';
-$dbname = 'seddata';
-$username = 'root';
-$password = '';
-
 header('Content-Type: application/json');
 
-// Get user_widget_id from either GET or POST
-$userWidgetId = 0;
-$userId = 1; // Default user ID
-
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Get parameters from query string
-    $userWidgetId = isset($_GET['user_widget_id']) ? (int)$_GET['user_widget_id'] : 0;
-    $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 1;
-} else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get POST data
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (!$input) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid JSON data']);
-        exit;
-    }
-    
-    // Get parameters from POST data
-    $userWidgetId = isset($input['user_widget_id']) ? (int)$input['user_widget_id'] : 0;
-    $userId = isset($input['user_id']) ? (int)$input['user_id'] : 1;
-} else {
+// Check if it's a POST request
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed. Use GET or POST.']);
-    exit;
-}
-
-// Validate required parameter
-if ($userWidgetId <= 0) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Missing required parameter: user_widget_id']);
+    echo json_encode(['error' => 'Method not allowed. Please use POST.']);
     exit;
 }
 
 try {
-    // Create PDO connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Get the JSON data from the request
+    $jsonData = file_get_contents('php://input');
+    $data = json_decode($jsonData, true);
     
-    // Update widget to make it visible again
-    $stmt = $pdo->prepare("
-        UPDATE user_widgets 
-        SET is_visible = TRUE
-        WHERE user_widget_id = ? AND user_id = ?
-    ");
-    
-    $stmt->execute([$userWidgetId, $userId]);
-    
-    // Check if any rows were affected
-    if ($stmt->rowCount() === 0) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Widget not found or not owned by user']);
-        exit;
+    // Validate data
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Invalid JSON data provided');
     }
+    
+    if (!isset($data['user_widget_id']) || !isset($data['user_id'])) {
+        throw new Exception('Missing required fields: user_widget_id, user_id');
+    }
+    
+    // In a real app, we would restore the widget in the database
+    // But for this dummy version, we just return a success response
     
     // Return success response
     echo json_encode([
         'success' => true,
-        'message' => 'Widget restored successfully'
+        'message' => 'Widget restored successfully',
+        'widget' => [
+            'user_widget_id' => $data['user_widget_id'],
+            'user_id' => $data['user_id'],
+            'widget_type' => 'chart',
+            'title' => 'Restored Widget',
+            'icon' => 'fa-chart-line',
+            'icon_color' => '#4CAF50',
+            'column_span' => 3,
+            'row_span' => 2,
+            'grid_position_x' => 0,
+            'grid_position_y' => 0,
+            'is_visible' => true,
+            'widget_data' => [
+                'chart_type' => 'line',
+                'labels' => ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+                'values' => [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
+                'unit' => 'kWh'
+            ]
+        ]
     ]);
     
-} catch (PDOException $e) {
-    // Return error response
+} catch (Exception $e) {
+    // Handle any exceptions
     http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode([
+        'error' => 'Error: ' . $e->getMessage(),
+        'details' => [
+            'file' => __FILE__,
+            'line' => $e->getLine()
+        ]
+    ]);
 }
 ?> 

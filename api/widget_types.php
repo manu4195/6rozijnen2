@@ -1,67 +1,114 @@
 <?php
-// Database connection settings
-$host = 'localhost';
-$dbname = 'seddata';
-$username = 'root';
-$password = '';
-
 // Set header to JSON
 header('Content-Type: application/json');
 
 try {
-    // Create database connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Get user ID (in a real app, this would come from the session)
-    $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 1; // Default to first user
-    
-    // Query to get all available widget types from the widgets table
-    $stmt = $pdo->prepare("
-        SELECT 
-            widget_id,
-            widget_name,
-            widget_type,
-            description,
-            default_title,
-            default_icon,
-            default_icon_color,
-            default_column_span,
-            default_row_span
-        FROM 
-            widgets
-        WHERE 
-            is_active = TRUE
-        ORDER BY
-            widget_name
-    ");
-    
-    $stmt->execute();
-    
-    // Fetch results as associative array
-    $widgetTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Check if user already has these widgets
-    $userWidgetsStmt = $pdo->prepare("
-        SELECT widget_id
-        FROM user_widgets
-        WHERE user_id = ? AND is_visible = TRUE
-    ");
-    
-    $userWidgetsStmt->execute([$userId]);
-    $userWidgets = $userWidgetsStmt->fetchAll(PDO::FETCH_COLUMN);
-    
-    // Mark widgets that are already on the dashboard
-    foreach ($widgetTypes as &$widget) {
-        $widget['already_added'] = in_array($widget['widget_id'], $userWidgets);
-    }
+    // Hardcoded widget types for demo
+    $widgetTypes = [
+        [
+            'widget_id' => 1,
+            'widget_name' => 'Zonnepaneelspanning',
+            'widget_type' => 'chart',
+            'description' => 'Toont de voltage van de zonnepanelen over tijd',
+            'default_title' => 'Zonnepaneelspanning',
+            'default_icon' => 'fa-bolt',
+            'default_icon_color' => '#FF9800',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 2,
+            'widget_name' => 'Zonnepaneelstroom',
+            'widget_type' => 'chart',
+            'description' => 'Toont de stroom van de zonnepanelen over tijd',
+            'default_title' => 'Zonnepaneelstroom',
+            'default_icon' => 'fa-plug',
+            'default_icon_color' => '#4CAF50',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 3,
+            'widget_name' => 'Waterstofproductie',
+            'widget_type' => 'chart',
+            'description' => 'Toont de waterstofproductie over tijd',
+            'default_title' => 'Waterstofproductie',
+            'default_icon' => 'fa-flask',
+            'default_icon_color' => '#2196F3',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 4,
+            'widget_name' => 'Stroomverbruik',
+            'widget_type' => 'chart',
+            'description' => 'Toont het stroomverbruik van de woning over tijd',
+            'default_title' => 'Stroomverbruik',
+            'default_icon' => 'fa-bolt',
+            'default_icon_color' => '#F44336',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 5,
+            'widget_name' => 'Buitentemperatuur',
+            'widget_type' => 'chart',
+            'description' => 'Toont de buitentemperatuur over tijd',
+            'default_title' => 'Buitentemperatuur',
+            'default_icon' => 'fa-temperature-high',
+            'default_icon_color' => '#9C27B0',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 6,
+            'widget_name' => 'Binnentemperatuur',
+            'widget_type' => 'chart',
+            'description' => 'Toont de binnentemperatuur over tijd',
+            'default_title' => 'Binnentemperatuur',
+            'default_icon' => 'fa-home',
+            'default_icon_color' => '#00BCD4',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 7,
+            'widget_name' => 'Accuniveau',
+            'widget_type' => 'chart',
+            'description' => 'Toont het accuniveau over tijd',
+            'default_title' => 'Accuniveau',
+            'default_icon' => 'fa-battery-three-quarters',
+            'default_icon_color' => '#8BC34A',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ],
+        [
+            'widget_id' => 8,
+            'widget_name' => 'Waterstofopslag',
+            'widget_type' => 'chart',
+            'description' => 'Toont het waterstofopslagpercentage over tijd',
+            'default_title' => 'Waterstofopslag',
+            'default_icon' => 'fa-database',
+            'default_icon_color' => '#3F51B5',
+            'default_column_span' => 3,
+            'default_row_span' => 2,
+            'already_added' => false
+        ]
+    ];
     
     // Return JSON response
     echo json_encode($widgetTypes);
     
-} catch (PDOException $e) {
-    // Handle database errors
+} catch (Exception $e) {
+    // Handle errors
     http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Error: ' . $e->getMessage()]);
 }
 ?> 
