@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Object Placer</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+        
+        /* Container layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        /* Control panel styles */
+        .control-panel {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .shape-options {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-right: 20px;
+        }
+        
+        label {
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        select, input {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        /* Grid styles */
+        .grid-container {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            position: relative;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 60px);
+            gap: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            position: relative;
+            min-height: 610px; /* 10 rows * 60px + 9 gaps * 5px + 1px border */
+        }
+        
+        .grid-cell {
+            background-color: rgba(0, 0, 0, 0.03);
+            border: 1px solid #ddd;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .grid-cell::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+        }
+        
+        .grid-cell.target-cell {
+            background-color: rgba(52, 152, 219, 0.2);
+            border: 2px solid #3498db;
+            z-index: 5;
+        }
+        
+        /* Object styles */
+        .object {
+            position: absolute;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            user-select: none;
+            transition: box-shadow 0.2s, transform 0.1s;
+            z-index: 10;
+        }
+        
+        .object.dragging {
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+        
+        /* Ghost preview */
+        .ghost-preview {
+            position: absolute;
+            background-color: rgba(52, 152, 219, 0.2);
+            border: 2px dashed #3498db;
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+        }
+        
+        /* Shape styles */
+        .square {
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
+        }
+        
+        .circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 50px solid currentColor;
+            background-color: transparent !important;
+        }
+
+        /* Coordinates display */
+        .coordinates {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grid Object Placer</h1>
+        
+        <div class="control-panel">
+            <div class="shape-options">
+                <label for="shape-type">Shape:</label>
+                <select id="shape-type">
+                    <option value="square">Square</option>
+                    <option value="circle">Circle</option>
+                    <option value="triangle">Triangle</option>
+                </select>
+            </div>
+            
+            <div class="shape-options">
+                <label for="shape-color">Color:</label>
+                <input type="color" id="shape-color" value="#3498db">
+            </div>
+            
+            <div class="shape-options">
+                <label for="shape-size">Size:</label>
+                <select id="shape-size">
+                    <option value="1">1x1</option>
+                    <option value="2">2x2</option>
+                    <option value="3">3x3</option>
+                </select>
+            </div>
+            
+            <button id="create-object">Create Object</button>
+            <button id="reset-grid">Reset Grid</button>
+            <div class="shape-options">
+                <label for="snap-toggle">Grid Snapping:</label>
+                <input type="checkbox" id="snap-toggle" checked>
+            </div>
+        </div>
+        
+        <div class="grid-container">
+            <div class="grid" id="placement-grid"></div>
+            <div class="ghost-preview" id="ghost-preview"></div>
+            <div class="coordinates" id="coordinates">Position: 0,0</div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get DOM elements
+            const grid = document.getElementById('placement-grid');
+            const createBtn = document.getElementById('create-object');
+            const resetBtn = document.getElementById('reset-grid');
+            const shapeTypeSelect = document.getElementById('shape-type');
+            const shapeColorInput = document.getElementById('shape-color');
+            const shapeSizeSelect = document.getElementById('shape-size');
+            const snapToggle = document.getElementById('snap-toggle');
+            const ghostPreview = document.getElementById('ghost-preview');
+            const coordinates = document.getElementById('coordinates');
+            
+            // Grid dimensions
+            const GRID_COLUMNS = 10;
+            const GRID_ROWS = 10;
+            const CELL_SIZE = 60; // in pixels
+            const GRID_GAP = 5; // in pixels
+            
+            // Track objects and their positions
+            let objects = [];
+            let objectCounter = 0;
+            let currentDraggedElement = null;
+            let offsetX = 0;
+            let offsetY = 0;
+            let gridRect = null;
+            let currentGridPosition = { x: 0, y: 0 };
+            let gridCells = [];
+            
+            // Initialize the grid
+            function initGrid() {
+                // Clear grid
+                grid.innerHTML = '';
+                gridCells = [];
+                
+                // Create grid cells
+                for (let row = 0; row < GRID_ROWS; row++) {
+                    gridCells[row] = [];
+                    for (let col = 0; col < GRID_COLUMNS; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        // Add small label in the corner
+                        cell.title = `${col},${row}`;
+                        
+                        grid.appendChild(cell);
+                        gridCells[row][col] = cell;
+                    }
+                }
+                
+                // Update grid rectangle for calculations
+                gridRect = grid.getBoundingClientRect();
+            }
+            
+            // Create a new object
+            function createObject() {
+                const shape = shapeTypeSelect.value;
+                const color = shapeColorInput.value;
+                const size = parseInt(shapeSizeSelect.value);
+                
+                // Create object container
+                const object = document.createElement('div');
+                object.className = 'object';
+                object.id = `object-${objectCounter++}`;
+                object.dataset.shape = shape;
+                object.dataset.size = size;
+                object.style.width = `${size * CELL_SIZE + (size - 1) * GRID_GAP}px`;
+                object.style.height = `${size * CELL_SIZE + (size - 1) * GRID_GAP}px`;
+                
+                // Create shape element
+                const shapeElement = document.createElement('div');
+                shapeElement.className = shape;
+                shapeElement.style.backgroundColor = color;
+                shapeElement.style.color = color; // For triangle (uses border color)
+                
+                // Add shape to object
+                object.appendChild(shapeElement);
+                
+                // Position in top-left of grid initially
+                object.style.left = '0px';
+                object.style.top = '0px';
+                object.dataset.gridCol = 0;
+                object.dataset.gridRow = 0;
+                
+                // Add to grid and objects array
+                grid.appendChild(object);
+                objects.push(object);
+                
+                // Make draggable
+                setupDraggable(object);
+                
+                // Show initial position
+                updateTargetCells(0, 0, size);
+                updateCoordinates(0, 0);
+                
+                // Play creation sound
+                playSound('create');
+            }
+            
+            // Setup drag functionality for an object
+            function setupDraggable(element) {
+                element.addEventListener('mousedown', startDrag);
+                element.addEventListener('touchstart', startDrag, { passive: false });
+            }
+            
+            // Start dragging an object
+            function startDrag(e) {
+                e.preventDefault();
+                
+                // Get the dragged element
+                currentDraggedElement = this;
+                currentDraggedElement.classList.add('dragging');
+                
+                // Calculate offset
+                const rect = currentDraggedElement.getBoundingClientRect();
+                
+                if (e.type === 'touchstart') {
+                    offsetX = e.touches[0].clientX - rect.left;
+                    offsetY = e.touches[0].clientY - rect.top;
+                } else {
+                    offsetX = e.clientX - rect.left;
+                    offsetY = e.clientY - rect.top;
+                }
+                
+                // Setup ghost preview
+                const size = parseInt(currentDraggedElement.dataset.size);
+                ghostPreview.style.width = `${size * CELL_SIZE + (size - 1) * GRID_GAP}px`;
+                ghostPreview.style.height = `${size * CELL_SIZE + (size - 1) * GRID_GAP}px`;
+                ghostPreview.style.display = 'block';
+                
+                // Add move and end event listeners
+                document.addEventListener('mousemove', moveDrag);
+                document.addEventListener('touchmove', moveDrag, { passive: false });
+                document.addEventListener('mouseup', endDrag);
+                document.addEventListener('touchend', endDrag);
+            }
+            
+            // Move object during drag
+            function moveDrag(e) {
+                e.preventDefault();
+                
+                if (!currentDraggedElement) return;
+                
+                let clientX, clientY;
+                
+                if (e.type === 'touchmove') {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                // Calculate new position relative to grid
+                let left = clientX - offsetX - gridRect.left;
+                let top = clientY - offsetY - gridRect.top;
+                
+                // Apply the position
+                currentDraggedElement.style.left = `${left}px`;
+                currentDraggedElement.style.top = `${top}px`;
+                
+                // If grid snapping is enabled, calculate and show preview
+                const size = parseInt(currentDraggedElement.dataset.size);
+                if (snapToggle.checked) {
+                    // Calculate grid cell position
+                    const gridCol = Math.max(0, Math.min(GRID_COLUMNS - size, Math.round(left / (CELL_SIZE + GRID_GAP))));
+                    const gridRow = Math.max(0, Math.min(GRID_ROWS - size, Math.round(top / (CELL_SIZE + GRID_GAP))));
+                    
+                    // Calculate snapped position
+                    const snappedLeft = gridCol * (CELL_SIZE + GRID_GAP);
+                    const snappedTop = gridRow * (CELL_SIZE + GRID_GAP);
+                    
+                    // Update ghost preview position
+                    ghostPreview.style.left = `${snappedLeft}px`;
+                    ghostPreview.style.top = `${snappedTop}px`;
+                    
+                    // Update target cells highlighting
+                    updateTargetCells(gridCol, gridRow, size);
+                    
+                    // Update current position
+                    if (gridCol !== currentGridPosition.x || gridRow !== currentGridPosition.y) {
+                        currentGridPosition.x = gridCol;
+                        currentGridPosition.y = gridRow;
+                        updateCoordinates(gridCol, gridRow);
+                    }
+                } else {
+                    // Hide ghost preview if snapping is disabled
+                    ghostPreview.style.display = 'none';
+                    
+                    // Clear all highlighting
+                    clearTargetCells();
+                    
+                    // Calculate approximate position for coordinates
+                    const approxCol = Math.floor(left / (CELL_SIZE + GRID_GAP));
+                    const approxRow = Math.floor(top / (CELL_SIZE + GRID_GAP));
+                    updateCoordinates(approxCol, approxRow);
+                }
+            }
+            
+            // Update target cells highlighting
+            function updateTargetCells(col, row, size) {
+                // Clear previous highlighting
+                clearTargetCells();
+                
+                // Add highlighting to target cells
+                for (let r = row; r < row + size && r < GRID_ROWS; r++) {
+                    for (let c = col; c < col + size && c < GRID_COLUMNS; c++) {
+                        if (gridCells[r] && gridCells[r][c]) {
+                            gridCells[r][c].classList.add('target-cell');
+                        }
+                    }
+                }
+            }
+            
+            // Clear all target cell highlighting
+            function clearTargetCells() {
+                for (let row = 0; row < GRID_ROWS; row++) {
+                    for (let col = 0; col < GRID_COLUMNS; col++) {
+                        if (gridCells[row] && gridCells[row][col]) {
+                            gridCells[row][col].classList.remove('target-cell');
+                        }
+                    }
+                }
+            }
+            
+            // Update coordinates display
+            function updateCoordinates(col, row) {
+                coordinates.textContent = `Position: ${col},${row}`;
+            }
+            
+            // End dragging and snap to grid
+            function endDrag() {
+                if (!currentDraggedElement) return;
+                
+                // Remove dragging class
+                currentDraggedElement.classList.remove('dragging');
+                
+                // Hide ghost preview
+                ghostPreview.style.display = 'none';
+                
+                // Get element position and size
+                const rect = currentDraggedElement.getBoundingClientRect();
+                const size = parseInt(currentDraggedElement.dataset.size);
+                
+                // Calculate final position
+                let gridCol, gridRow, snappedLeft, snappedTop;
+                
+                if (snapToggle.checked) {
+                    // For snap-to-grid, use the rounded position
+                    const left = rect.left - gridRect.left;
+                    const top = rect.top - gridRect.top;
+                    
+                    gridCol = Math.max(0, Math.min(GRID_COLUMNS - size, Math.round(left / (CELL_SIZE + GRID_GAP))));
+                    gridRow = Math.max(0, Math.min(GRID_ROWS - size, Math.round(top / (CELL_SIZE + GRID_GAP))));
+                    
+                    snappedLeft = gridCol * (CELL_SIZE + GRID_GAP);
+                    snappedTop = gridRow * (CELL_SIZE + GRID_GAP);
+                    
+                    // Play snap sound
+                    playSound('snap');
+                } else {
+                    // Without snapping, just use the current position
+                    const left = rect.left - gridRect.left;
+                    const top = rect.top - gridRect.top;
+                    
+                    gridCol = Math.floor(left / (CELL_SIZE + GRID_GAP));
+                    gridRow = Math.floor(top / (CELL_SIZE + GRID_GAP));
+                    
+                    // Constrain to grid boundaries
+                    gridCol = Math.max(0, Math.min(GRID_COLUMNS - size, gridCol));
+                    gridRow = Math.max(0, Math.min(GRID_ROWS - size, gridRow));
+                    
+                    // Calculate constrained position
+                    snappedLeft = left;
+                    snappedTop = top;
+                }
+                
+                // Apply final position with animation
+                currentDraggedElement.style.transition = 'left 0.2s, top 0.2s';
+                currentDraggedElement.style.left = `${snappedLeft}px`;
+                currentDraggedElement.style.top = `${snappedTop}px`;
+                
+                // Reset transition after animation completes
+                setTimeout(() => {
+                    currentDraggedElement.style.transition = '';
+                }, 200);
+                
+                // Store grid position
+                currentDraggedElement.dataset.gridCol = gridCol;
+                currentDraggedElement.dataset.gridRow = gridRow;
+                
+                // Reset current dragged element
+                currentDraggedElement = null;
+                
+                // Clear target cells
+                setTimeout(clearTargetCells, 200);
+                
+                // Remove event listeners
+                document.removeEventListener('mousemove', moveDrag);
+                document.removeEventListener('touchmove', moveDrag);
+                document.removeEventListener('mouseup', endDrag);
+                document.removeEventListener('touchend', endDrag);
+            }
+            
+            // Reset the grid
+            function resetGrid() {
+                objects.forEach(obj => obj.remove());
+                objects = [];
+                objectCounter = 0;
+                clearTargetCells();
+                updateCoordinates(0, 0);
+                playSound('reset');
+            }
+            
+            // Play sounds for interactions
+            function playSound(type) {
+                // Create an oscillator
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                // Connect nodes
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                // Set parameters based on sound type
+                switch(type) {
+                    case 'create':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+                        oscillator.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+                        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.3);
+                        break;
+                    case 'snap':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                        oscillator.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.05);
+                        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.1);
+                        break;
+                    case 'reset':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                        oscillator.frequency.linearRampToValueAtTime(220, audioCtx.currentTime + 0.3); // A3
+                        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.3);
+                        break;
+                }
+            }
+            
+            // Event listeners
+            createBtn.addEventListener('click', createObject);
+            resetBtn.addEventListener('click', resetGrid);
+            
+            // Toggle snapping
+            snapToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    grid.classList.add('snap-enabled');
+                } else {
+                    grid.classList.remove('snap-enabled');
+                    clearTargetCells();
+                }
+            });
+            
+            // Window resize handler
+            window.addEventListener('resize', function() {
+                gridRect = grid.getBoundingClientRect();
+            });
+            
+            // Initialize the grid
+            initGrid();
+        });
+    </script>
+</body>
+</html>
