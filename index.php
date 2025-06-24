@@ -27,7 +27,7 @@ if (!isset($_SESSION['user_id'])) {
         <?php else: ?>
         <aside class="sidebar">
             <div class="logo-container">
-                <div class="logo">R</div>
+                <div class="logo">6</div>
                 <span class="logo-text">Rozijnen</span>
                 <button class="menu-toggle"><i class="fas fa-bars"></i></button>
             </div>
