@@ -37,6 +37,7 @@ $userInfo = [
     <script src="widget-grid.js"></script>
     <script src="script.js"></script>
 </head>
+
 <body>
     <div class="container">
         <aside class="sidebar">
