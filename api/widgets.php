@@ -2,71 +2,162 @@
 header('Content-Type: application/json');
 
 try {
-    // Path to the CSV file
-    $csvFile = __DIR__ . '/Data.csv';
+    // Get user ID from request
+    $userId = $_GET['user_id'] ?? 1;
     
-    // Check if the file exists
-    if (!file_exists($csvFile)) {
-        throw new Exception("CSV file not found: $csvFile");
-    }
-    
-    // Read the CSV file
-    $csvData = file_get_contents($csvFile);
-    
-    // Split the content into lines
-    $lines = explode("\n", $csvData);
-    
-    // Get headers from first line and convert them to keys
-    $headers = str_getcsv(array_shift($lines), ';');
-    
-    // Initialize an empty array for widgets
-    $widgets = [];
-    
-    // Process each line
-    foreach ($lines as $index => $line) {
-        // Skip empty lines
-        if (empty(trim($line))) {
-            continue;
-        }
-        
-        // Parse the CSV line
-        $data = str_getcsv($line, ';');
-        
-        // Skip if there's not enough data
-        if (count($data) < count($headers)) {
-            continue;
-        }
-        
-        // Combine headers with data to create an associative array
-        $rowData = array_combine($headers, $data);
-        
-        // Create widget data from the CSV row
-        $widget = [
-            'user_widget_id' => $index + 1,
-            'user_id' => 1,
+    // Return default widgets for the dashboard
+    $widgets = [
+        [
+            'user_widget_id' => 1,
+            'widget_id' => 1,
+            'user_id' => $userId,
+            'widget_type' => 'stat-card',
+            'title' => 'Zonne-energie Productie',
+            'icon' => 'fa-sun',
+            'icon_color' => '#4CAF50',
+            'column_span' => 4,
+            'row_span' => 2,
+            'grid_position_x' => 0,
+            'grid_position_y' => 0,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'value' => '24.8 kWh',
+                'secondary_value' => '+12% vs gisteren',
+                'is_positive' => true
+            ])
+        ],
+        [
+            'user_widget_id' => 2,
+            'widget_id' => 2,
+            'user_id' => $userId,
+            'widget_type' => 'stat-card',
+            'title' => 'Stroomverbruik',
+            'icon' => 'fa-bolt',
+            'icon_color' => '#E91E63',
+            'column_span' => 4,
+            'row_span' => 2,
+            'grid_position_x' => 4,
+            'grid_position_y' => 0,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'value' => '18.2 kWh',
+                'secondary_value' => '-15% vs gisteren',
+                'is_positive' => false
+            ])
+        ],
+        [
+            'user_widget_id' => 3,
+            'widget_id' => 3,
+            'user_id' => $userId,
+            'widget_type' => 'stat-card',
+            'title' => 'Batterij Status',
+            'icon' => 'fa-battery-three-quarters',
+            'icon_color' => '#2196F3',
+            'column_span' => 4,
+            'row_span' => 2,
+            'grid_position_x' => 8,
+            'grid_position_y' => 0,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'value' => '78%',
+                'secondary_value' => '6.2 kWh opgeslagen',
+                'is_positive' => null
+            ])
+        ],
+        [
+            'user_widget_id' => 4,
+            'widget_id' => 4,
+            'user_id' => $userId,
             'widget_type' => 'chart',
-            'title' => 'Sensor Data ' . ($rowData['Tijdstip'] ? substr($rowData['Tijdstip'], 11, 5) : ''),
+            'title' => 'Energie Productie',
             'icon' => 'fa-chart-line',
             'icon_color' => '#4CAF50',
-            'column_span' => 3,
-            'row_span' => 2,
-            'grid_position_x' => ($index % 4) * 3,
-            'grid_position_y' => floor($index / 4) * 2,
+            'column_span' => 6,
+            'row_span' => 3,
+            'grid_position_x' => 0,
+            'grid_position_y' => 2,
             'is_visible' => true,
-            'widget_data' => $rowData
-        ];
-        
-        // Add the widget to the array
-        $widgets[] = $widget;
-        
-        // Limit to 20 widgets to avoid performance issues
-        if (count($widgets) >= 8) {
-            break;
-        }
-    }
+            'widget_data' => json_encode([
+                'chart_type' => 'line',
+                'data_source' => 'solar_production'
+            ])
+        ],
+        [
+            'user_widget_id' => 5,
+            'widget_id' => 5,
+            'user_id' => $userId,
+            'widget_type' => 'chart',
+            'title' => 'Energieverbruik',
+            'icon' => 'fa-chart-line',
+            'icon_color' => '#E91E63',
+            'column_span' => 6,
+            'row_span' => 3,
+            'grid_position_x' => 6,
+            'grid_position_y' => 2,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'chart_type' => 'line',
+                'data_source' => 'consumption'
+            ])
+        ],
+        [
+            'user_widget_id' => 6,
+            'widget_id' => 6,
+            'user_id' => $userId,
+            'widget_type' => 'chart',
+            'title' => 'Opslagstatus',
+            'icon' => 'fa-chart-bar',
+            'icon_color' => '#2196F3',
+            'column_span' => 4,
+            'row_span' => 3,
+            'grid_position_x' => 0,
+            'grid_position_y' => 5,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'chart_type' => 'bar',
+                'data_source' => 'storage_levels'
+            ])
+        ],
+        [
+            'user_widget_id' => 7,
+            'widget_id' => 7,
+            'user_id' => $userId,
+            'widget_type' => 'chart',
+            'title' => 'Temperatuur',
+            'icon' => 'fa-temperature-high',
+            'icon_color' => '#FF5722',
+            'column_span' => 4,
+            'row_span' => 3,
+            'grid_position_x' => 4,
+            'grid_position_y' => 5,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'chart_type' => 'line',
+                'data_source' => 'temperature'
+            ])
+        ],
+        [
+            'user_widget_id' => 8,
+            'widget_id' => 8,
+            'user_id' => $userId,
+            'widget_type' => 'chart',
+            'title' => 'Waterstofproductie',
+            'icon' => 'fa-flask',
+            'icon_color' => '#FF9800',
+            'column_span' => 4,
+            'row_span' => 3,
+            'grid_position_x' => 8,
+            'grid_position_y' => 5,
+            'is_visible' => true,
+            'widget_data' => json_encode([
+                'chart_type' => 'line',
+                'data_source' => 'hydrogen_production'
+            ])
+        ]
+    ];
     
     // Return widgets as JSON
-    echo json_encode($widgets, JSON_NUMERIC_CHECK);
+    echo json_encode($widgets);
     
 } catch (Exception $e) {
     // Handle any exceptions
@@ -79,4 +170,4 @@ try {
         ]
     ]);
 }
-?> 
+?>

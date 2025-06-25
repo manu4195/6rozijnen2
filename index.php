@@ -36,6 +36,14 @@ $userInfo = [
     <!-- Custom scripts -->
     <script src="widget-grid.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Global variables
+        const USER_ID = <?php echo $userId; ?>;
+        let ACTIVE_VIEW = "<?php echo $activeView; ?>";
+        
+        // Make ACTIVE_VIEW globally mutable
+        window.ACTIVE_VIEW = ACTIVE_VIEW;
+    </script>
 </head>
 
 <body>
@@ -100,8 +108,8 @@ $userInfo = [
             <div id="personalize-view" class="view-container" <?php echo $activeView != 'personalize' ? 'style="display: none;"' : ''; ?>>
                 <header class="dashboard-header">
                     <div class="title-container">
-                        <h1>Personalize</h1>
-                        <p>Creëer je eigen Dashboard</p>
+                        <h1>Personalize Dashboard</h1>
+                        <p>Creëer je eigen dashboard layout</p>
                     </div>
                     <div class="header-actions">
                         <div class="dropdown">
@@ -109,41 +117,58 @@ $userInfo = [
                         </div>
                         <div class="widget-toolbar">
                             <button class="add-widget-btn"><i class="fas fa-plus"></i> Add Widget</button>
+                            <button class="save-changes-btn"><i class="fas fa-save"></i> Save Changes</button>
                         </div>
                         <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
                     </div>
                 </header>
                 
-                <button class="save-changes-btn">Save Changes</button>
+                <div class="personalize-instructions">
+                    <div class="instructions-card">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="instructions-text">
+                            <strong>Tip:</strong> Sleep widgets om ze te verplaatsen, verander de grootte door aan de hoeken te slepen, 
+                            of verberg widgets met de <i class="fas fa-eye-slash"></i> knop.
+                        </div>
+                    </div>
+                </div>
                 
                 <div id="personalize-grid" class="grid-stack">
                     <!-- Personalize content will be loaded here -->
-                </div>
-                
-                <!-- Widget Selection Modal -->
-                <div id="widget-selection-modal" class="modal" style="display: none;">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2>Add Widget</h2>
-                            <button class="close-modal"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="widget-types">
-                                <!-- Widget types will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
     </div>
     
-    <?php
-    // Output initial data for JavaScript
-    echo '<script>';
-    echo 'const USER_ID = ' . $userId . ';';
-    echo 'const ACTIVE_VIEW = "' . $activeView . '";';
-    echo '</script>';
-    ?>
+    <!-- Widget Selection Modal -->
+    <div id="widget-selection-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Add Widget</h2>
+                <button class="close-modal" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>Available Widgets</h3>
+                    <div class="widget-types">
+                        <!-- Widget types will be loaded here -->
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading available widgets...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal" type="button">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
 </body>
-</html> 
+</html>

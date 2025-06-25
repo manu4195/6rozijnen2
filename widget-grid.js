@@ -354,16 +354,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load widgets into the grid
     function loadWidgetsToGrid(widgets) {
         // Clear existing widgets
-        widgetGrid.removeAll();
+        if (widgetGrid) {
+            widgetGrid.removeAll();
+        }
+        
+        // Destroy existing charts
+        Object.keys(widgetCharts).forEach(chartId => {
+            if (widgetCharts[chartId]) {
+                widgetCharts[chartId].destroy();
+                delete widgetCharts[chartId];
+            }
+        });
         
         // Add only visible widgets
-        widgets.filter(widget => widget.is_visible !== false).forEach(widget => {
+        widgets.filter(widget => widget.is_visible !== false).forEach((widget, index) => {
             const widgetNode = createWidgetGridItem(widget);
-            widgetGrid.addWidget(widgetNode);
-            
-            // Initialize charts if needed
-            if (widget.widget_type === 'chart') {
-                setTimeout(() => initializeChart(widget), 100);
+            if (widgetGrid) {
+                widgetGrid.addWidget(widgetNode);
+                
+                // Initialize charts if needed with proper delay
+                if (widget.widget_type === 'chart') {
+                    setTimeout(() => initializeChart(widget), 500 + (index * 100));
+                }
             }
         });
     }
@@ -432,7 +444,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add content based on widget type
         switch (widget.widget_type) {
             case 'stat-card':
-                widgetBody.innerHTML = createStatCardContent(widget);
+                // For stat cards, create content asynchronously
+                createStatCardContent(widget).then(content => {
+                    widgetBody.innerHTML = content;
+                });
                 break;
             case 'chart':
                 widgetBody.innerHTML = createChartContent(widget);
@@ -457,7 +472,56 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Create content for stat card widgets
-    function createStatCardContent(widget) {
+    async function createStatCardContent(widget) {
+        try {
+            // Get latest data from CSV
+            const response = await fetch('api/csv_data.php?endpoint=latest');
+            
+            if (response.ok) {
+                const latestData = await response.json();
+                
+                if (latestData && Object.keys(latestData).length > 0) {
+                    const widgetIdNum = parseInt(widget.user_widget_id);
+                    let value = '';
+                    let secondaryValue = '';
+                    let isPositive = null;
+                    
+                    switch (widgetIdNum) {
+                        case 1:
+                            const solarProduction = parseFloat(latestData['Waterstofproductie (L/u)'] || 0);
+                            value = solarProduction.toFixed(1) + ' L/u';
+                            secondaryValue = solarProduction > 20 ? '+12% vs gisteren' : 'Lage productie';
+                            isPositive = solarProduction > 20;
+                            break;
+                        case 2:
+                            const consumption = parseFloat(latestData['Stroomverbruik woning (kW)'] || 0);
+                            value = consumption.toFixed(1) + ' kW';
+                            secondaryValue = consumption < 1 ? 'Efficiënt verbruik' : 'Hoog verbruik';
+                            isPositive = consumption < 1;
+                            break;
+                        case 3:
+                            const batteryLevel = parseFloat(latestData['Accuniveau (%)'] || 0);
+                            value = batteryLevel.toFixed(0) + '%';
+                            secondaryValue = batteryLevel > 80 ? 'Goed opgeladen' : 'Lage batterij';
+                            isPositive = batteryLevel > 80;
+                            break;
+                    }
+                    
+                    return `
+                        <div class="stat-card">
+                            <div class="stat-value">${value}</div>
+                            <div class="stat-secondary ${isPositive === true ? 'positive' : isPositive === false ? 'negative' : ''}">
+                                ${secondaryValue}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching latest data:', error);
+        }
+        
+        // Fallback to default data
         const data = typeof widget.widget_data === 'string' ? JSON.parse(widget.widget_data) : widget.widget_data;
         
         return `
@@ -472,7 +536,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Create content for chart widgets
     function createChartContent(widget) {
-        return `<div class="chart-container"><canvas id="chart-${widget.user_widget_id}"></canvas></div>`;
+        return `<div class="chart-container" style="height: 100%; width: 100%; position: relative; padding: 10px; box-sizing: border-box;">
+            <canvas id="chart-${widget.user_widget_id}" style="height: 100%; width: 100%;"></canvas>
+        </div>`;
     }
     
     // Create content for notifications widgets
@@ -552,54 +618,80 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Initialize chart widget
-    function initializeChart(widget) {
+    async function initializeChart(widget) {
         const chartId = `chart-${widget.user_widget_id}`;
         const chartCanvas = document.getElementById(chartId);
         
-        if (!chartCanvas) return;
-        
-        // Ensure proper sizing of the chart container
-        const chartContainer = chartCanvas.closest('.chart-container');
-        if (chartContainer) {
-            chartContainer.style.height = '100%';
-            chartContainer.style.width = '100%';
-            chartContainer.style.padding = '10px';
-            chartContainer.style.boxSizing = 'border-box';
+        if (!chartCanvas) {
+            console.error(`Chart canvas ${chartId} not found`);
+            return;
         }
         
-        // Parse data if needed
-        const data = typeof widget.widget_data === 'string' ? JSON.parse(widget.widget_data) : widget.widget_data;
+        console.log(`Initializing chart for widget ${widget.user_widget_id}`);
         
         // Remove existing chart if it exists
         if (widgetCharts[chartId]) {
             widgetCharts[chartId].destroy();
+            delete widgetCharts[chartId];
         }
         
-        // Check if this is data with labels and values arrays (from widget_details.php)
-        if (data && Array.isArray(data.labels) && Array.isArray(data.values)) {
-            // Create chart with labels and values data
-            widgetCharts[chartId] = new Chart(chartCanvas, {
-                type: data.chart_type || 'line',
+        try {
+            // Get chart configuration based on widget ID
+            const chartConfig = getChartConfigForWidget(widget);
+            console.log(`Chart config for widget ${widget.user_widget_id}:`, chartConfig);
+            
+            // Fetch data from CSV API
+            const response = await fetch(`api/csv_data.php?endpoint=timeseries&column=${encodeURIComponent(chartConfig.column)}&limit=12`);
+            
+            let chartData;
+            let chartLabels;
+            let unitText = '';
+            
+            if (response.ok) {
+                const csvData = await response.json();
+                chartData = csvData.values || [];
+                chartLabels = csvData.labels || [];
+                unitText = csvData.unit || '';
+                console.log(`Loaded chart data for ${chartConfig.column}:`, chartData.length, 'points');
+            } else {
+                console.warn(`Failed to load data for ${chartConfig.column}, using sample data`);
+                // Fallback to sample data
+                chartLabels = ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00'];
+                chartData = generateSampleData(chartConfig.column);
+                unitText = getUnitForColumn(chartConfig.column);
+            }
+            
+            // Ensure we have some data
+            if (chartData.length === 0) {
+                chartLabels = ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00'];
+                chartData = generateSampleData(chartConfig.column);
+                unitText = getUnitForColumn(chartConfig.column);
+            }
+            
+            // Create chart configuration
+            const chartConfigObj = {
+                type: chartConfig.type,
                 data: {
-                    labels: data.labels,
+                    labels: chartLabels,
                     datasets: [{
-                        label: widget.title,
-                        data: data.values,
-                        borderColor: widget.icon_color || '#4CAF50',
-                        backgroundColor: convertHexToRGBA(widget.icon_color || '#4CAF50', 0.1),
+                        label: chartConfig.title,
+                        data: chartData,
+                        borderColor: widget.icon_color || chartConfig.color,
+                        backgroundColor: convertHexToRGBA(widget.icon_color || chartConfig.color, 0.1),
+                        borderWidth: 2,
                         tension: 0.4,
-                        fill: true
+                        fill: chartConfig.type === 'line'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
+                        legend: { 
+                            display: false 
+                        },
                         title: {
-                            display: true,
-                            text: widget.title,
-                            font: { size: 16 }
+                            display: false
                         }
                     },
                     scales: {
@@ -607,281 +699,189 @@ document.addEventListener('DOMContentLoaded', function() {
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: data.unit || '',
-                                font: { size: 14 }
+                                text: unitText,
+                                font: { size: 12 }
                             },
-                            ticks: { color: '#666', font: { size: 12 } }
+                            ticks: { 
+                                color: '#666', 
+                                font: { size: 10 },
+                                maxTicksLimit: 5
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
                         },
-                        x: { ticks: { color: '#666', font: { size: 12 } } }
+                        x: { 
+                            ticks: { 
+                                color: '#666', 
+                                font: { size: 10 },
+                                maxTicksLimit: 6
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            radius: 3,
+                            hoverRadius: 5
+                        }
                     }
                 }
-            });
-            return;
+            };
+            
+            // Create the chart
+            widgetCharts[chartId] = new Chart(chartCanvas, chartConfigObj);
+            console.log(`Chart ${chartId} created successfully`);
+            
+        } catch (error) {
+            console.error(`Error creating chart ${chartId}:`, error);
+            
+            // Show error message in chart container
+            const chartContainer = chartCanvas.closest('.chart-container');
+            if (chartContainer) {
+                chartContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+                        <div style="text-align: center;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px; color: #ff6b6b;"></i>
+                            <p style="margin: 0; font-size: 12px;">Fout bij laden grafiek</p>
+                            <p style="margin: 5px 0 0 0; font-size: 10px; color: #999;">${error.message}</p>
+                        </div>
+                    </div>
+                `;
+            }
         }
-        
-        // Check if this is CSV data (has a Tijdstip field)
-        if (data && data['Tijdstip']) {
-            // CSV format - create a chart from the CSV data
-            
-            // Choose a data column based on widget ID to show different types of data
-            const widgetIdNum = parseInt(widget.user_widget_id);
-            let selectedColumn = '';
-            let chartTitle = '';
-            let yAxisLabel = '';
-            
-            switch (widgetIdNum % 8) {
-                case 0:
-                    selectedColumn = 'Zonnepaneelspanning (V)';
-                    chartTitle = 'Zonnepaneelspanning';
-                    yAxisLabel = 'Volt';
-                    break;
-                case 1:
-                    selectedColumn = 'Zonnepaneelstroom (A)';
-                    chartTitle = 'Zonnepaneelstroom';
-                    yAxisLabel = 'Ampère';
-                    break;
-                case 2:
-                    selectedColumn = 'Waterstofproductie (L/u)';
-                    chartTitle = 'Waterstofproductie';
-                    yAxisLabel = 'L/u';
-                    break;
-                case 3:
-                    selectedColumn = 'Stroomverbruik woning (kW)';
-                    chartTitle = 'Stroomverbruik woning';
-                    yAxisLabel = 'kW';
-                    break;
-                case 4:
-                    selectedColumn = 'Buitentemperatuur (°C)';
-                    chartTitle = 'Buitentemperatuur';
-                    yAxisLabel = '°C';
-                    break;
-                case 5:
-                    selectedColumn = 'Binnentemperatuur (°C)';
-                    chartTitle = 'Binnentemperatuur';
-                    yAxisLabel = '°C';
-                    break;
-                case 6:
-                    selectedColumn = 'Accuniveau (%)';
-                    chartTitle = 'Accuniveau';
-                    yAxisLabel = '%';
-                    break;
-                case 7:
-                    selectedColumn = 'Waterstofopslag woning (%)';
-                    chartTitle = 'Waterstofopslag';
-                    yAxisLabel = '%';
-                    break;
-            }
-            
-            // Get value from the selected column
-            let dataValue = 0;
-            if (data[selectedColumn]) {
-                // Replace comma with dot for correct numeric value
-                dataValue = parseFloat(data[selectedColumn].toString().replace(',', '.'));
-            }
-            
-            // Use time from Tijdstip column as label
-            const timeLabel = data['Tijdstip'] ? data['Tijdstip'].substring(11, 16) : '00:00'; // Extract HH:MM from time
-            
-            // Create chart with CSV data
-            widgetCharts[chartId] = new Chart(chartCanvas, {
+    }
+    
+    // Get chart configuration based on widget user_widget_id
+    function getChartConfigForWidget(widget) {
+        const widgetIdNum = parseInt(widget.user_widget_id);
+        const configs = [
+            {
+                column: 'Zonnepaneelspanning (V)',
+                title: 'Zonnepaneelspanning',
+                type: 'line',
+                color: '#4CAF50'
+            },
+            {
+                column: 'Zonnepaneelstroom (A)',
+                title: 'Zonnepaneelstroom',
+                type: 'line',
+                color: '#2196F3'
+            },
+            {
+                column: 'Waterstofproductie (L/u)',
+                title: 'Waterstofproductie',
                 type: 'bar',
-                data: {
-                    labels: [timeLabel],
-                    datasets: [{
-                        label: chartTitle,
-                        data: [dataValue],
-                        borderColor: widget.icon_color || '#4CAF50',
-                        backgroundColor: convertHexToRGBA(widget.icon_color || '#4CAF50', 0.5),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: chartTitle,
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: yAxisLabel,
-                                font: {
-                                    size: 14
-                                }
-                            },
-                            ticks: {
-                                color: '#666',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#666',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Update widget title
-            const titleEl = document.querySelector(`[data-user-widget-id="${widget.user_widget_id}"] .widget-title`);
-            if (titleEl) {
-                titleEl.innerHTML = `<i class="fas ${widget.icon}" style="color: ${widget.icon_color};"></i> ${chartTitle}`;
+                color: '#FF9800'
+            },
+            {
+                column: 'Stroomverbruik woning (kW)',
+                title: 'Stroomverbruik',
+                type: 'line',
+                color: '#E91E63'
+            },
+            {
+                column: 'Buitentemperatuur (°C)',
+                title: 'Buitentemperatuur',
+                type: 'line',
+                color: '#FF5722'
+            },
+            {
+                column: 'Binnentemperatuur (°C)',
+                title: 'Binnentemperatuur',
+                type: 'line',
+                color: '#9C27B0'
+            },
+            {
+                column: 'Accuniveau (%)',
+                title: 'Accuniveau',
+                type: 'bar',
+                color: '#2196F3'
+            },
+            {
+                column: 'Waterstofopslag woning (%)',
+                title: 'Waterstofopslag',
+                type: 'bar',
+                color: '#FF9800'
             }
-        } else {
-            // Default chart configuration
-            let chartData, chartOptions;
-            const chartType = data && data.chart_type ? data.chart_type : 'line';
-            
-            if (chartType === 'line') {
-                // Sample line chart data for energy production
-                chartData = {
-                    labels: ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
-                    datasets: [{
-                        label: 'kWh',
-                        data: [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
-                        borderColor: '#4CAF50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                };
-                
-                chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            display: false,
-                            labels: {
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: widget.title,
-                            font: {
-                                size: 16
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#666',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#666',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        }
-                    }
-                };
-            } else if (chartType === 'bar') {
-                // Sample bar chart data for consumption vs production
-                chartData = {
-                    labels: ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
-                    datasets: [
-                        {
-                            label: 'Productie',
-                            data: [0.5, 1.8, 3.2, 4.5, 4.2, 3.0, 1.5, 0.2],
-                            backgroundColor: 'rgba(76, 175, 80, 0.7)'
-                        },
-                        {
-                            label: 'Verbruik',
-                            data: [2.1, 1.5, 1.2, 1.5, 1.8, 2.2, 3.0, 3.5],
-                            backgroundColor: 'rgba(233, 30, 99, 0.7)'
-                        }
-                    ]
-                };
-                
-                chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: widget.title,
-                            font: {
-                                size: 16
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#666',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#666',
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        }
-                    }
-                };
+        ];
+        
+        // Map widget IDs to specific configs
+        const widgetToConfigMap = {
+            4: 0, // Energie Productie -> Zonnepaneelspanning
+            5: 3, // Energieverbruik -> Stroomverbruik woning
+            6: 6, // Opslagstatus -> Accuniveau
+            7: 4, // Temperatuur -> Buitentemperatuur
+            8: 2  // Waterstofproductie -> Waterstofproductie
+        };
+        
+        const configIndex = widgetToConfigMap[widgetIdNum] !== undefined ? 
+            widgetToConfigMap[widgetIdNum] : 
+            (widgetIdNum - 1) % configs.length;
+        
+        return configs[configIndex] || configs[0];
+    }
+    
+    // Generate sample data for fallback
+    function generateSampleData(column) {
+        const dataPoints = 8;
+        const data = [];
+        
+        for (let i = 0; i < dataPoints; i++) {
+            let value;
+            switch (column) {
+                case 'Waterstofproductie (L/u)':
+                    value = Math.random() * 50 + 10;
+                    break;
+                case 'Buitentemperatuur (°C)':
+                    value = Math.random() * 15 + 10;
+                    break;
+                case 'Accuniveau (%)':
+                    value = Math.random() * 40 + 60;
+                    break;
+                case 'Zonnepaneelspanning (V)':
+                    value = Math.random() * 10 + 5;
+                    break;
+                case 'Stroomverbruik woning (kW)':
+                    value = Math.random() * 2 + 0.5;
+                    break;
+                default:
+                    value = Math.random() * 10 + 5;
             }
-            
-            // Create new chart
-            widgetCharts[chartId] = new Chart(chartCanvas, {
-                type: chartType,
-                data: chartData,
-                options: chartOptions
-            });
+            data.push(parseFloat(value.toFixed(1)));
         }
+        
+        return data;
     }
     
-    // Helper function to convert hex color to rgba with opacity
-    function convertHexToRGBA(hex, opacity) {
-        if (!hex) return `rgba(76, 175, 80, ${opacity})`; // Default green as fallback
-        
-        hex = hex.replace('#', '');
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        
-        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    // Get unit for data column
+    function getUnitForColumn(column) {
+        if (column.includes('(V)')) return 'V';
+        if (column.includes('(A)')) return 'A';
+        if (column.includes('(L/u)')) return 'L/u';
+        if (column.includes('(kW)')) return 'kW';
+        if (column.includes('(°C)')) return '°C';
+        if (column.includes('(%)')) return '%';
+        return '';
     }
     
+    // Convert hex color to RGBA
+    function convertHexToRGBA(hex, alpha) {
+        if (!hex) return `rgba(76, 175, 80, ${alpha})`;
+        
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
     // Hide a widget
     function hideWidget(userWidgetId) {
         if (!userWidgetId) return;
@@ -1270,4 +1270,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize everything when the DOM is loaded
     initWidgetGrid();
-}); 
+});
