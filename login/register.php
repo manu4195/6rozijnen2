@@ -124,11 +124,6 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                     <span class="error-message"><?php echo $username_err; ?></span>
                 </div>
                 
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="Enter your email address">
-                </div>
-                
                 <div class="form-group <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>">
                     <label>Password</label>
                     <div class="password-field">
