@@ -2,15 +2,21 @@
 // Start session
 session_start();
 
+// Check if user is logged in, if not redirect to login page
+if(!isset($_SESSION['user_id'])) {
+    header("Location: login/login.php");
+    exit();
+}
+
 // Default user ID (in a real app, this would come from the session)
-$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
+$userId = $_SESSION['user_id'];
 
 // Check which view to show
 $activeView = isset($_GET['view']) && $_GET['view'] === 'personalize' ? 'personalize' : 'dashboard';
 
 // Dummy user info for demo
 $userInfo = [
-    'name' => 'Demo User',
+    'name' => isset($_SESSION['username']) ? $_SESSION['username'] : 'Demo User',
     'email' => 'demo@example.com',
     'plan' => 'Premium',
     'avatar' => 'https://ui-avatars.com/api/?name=Demo+User&background=random'
