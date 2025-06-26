@@ -113,8 +113,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
                 <div class="form-group <?php echo (!empty($username_err)) ? 'has-error' : ''; ?>">
-                    <label>Email Address</label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter your email address" value="<?php echo $username; ?>">
+                    <label>Username</label>
+                    <input type="text" name="username" class="form-control" placeholder="Enter your username" value="<?php echo $username; ?>">
                     <span class="error-message"><?php echo $username_err; ?></span>
                 </div>    
                 <div class="form-group <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>">
