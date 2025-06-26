@@ -1,6 +1,10 @@
 <?php
 // Start session
 session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login/login.php');
+    exit();
+}
 
 // Default user ID (in a real app, this would come from the session)
 $userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
