@@ -1,70 +1,101 @@
 <?php
+// Start session
 session_start();
 if (!isset($_SESSION['user_id'])) {
     header('Location: login/login.php');
     exit();
 }
+
+// Check if user is logged in, if not redirect to login page
+if(!isset($_SESSION['user_id'])) {
+    header("Location: login/login.php");
+    exit();
+}
+
+// Default user ID (in a real app, this would come from the session)
+$userId = $_SESSION['user_id'];
+
+// Check which view to show
+$activeView = isset($_GET['view']) ? $_GET['view'] : 'dashboard';
+
+// Dummy user info for demo
+$userInfo = [
+    'name' => isset($_SESSION['username']) ? $_SESSION['username'] : 'Demo User',
+    'email' => 'demo@example.com',
+    'plan' => 'Premium',
+    'avatar' => 'https://ui-avatars.com/api/?name=Demo+User&background=random'
+];
 ?>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Energy Dashboard</title>
+    <!-- Core CSS -->
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- GridStack CSS for grid layout and drag-drop -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+    
+    <!-- Custom scripts -->
+    <script src="widget-grid.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Global variables
+        const USER_ID = <?php echo $userId; ?>;
+        let ACTIVE_VIEW = "<?php echo $activeView; ?>";
+        
+        // Make ACTIVE_VIEW globally mutable
+        window.ACTIVE_VIEW = ACTIVE_VIEW;
+    </script>
 </head>
+
 <body>
     <div class="container">
-        <?php if (!isset($_SESSION['user_id'])): ?>
-            <div class="form-container" style="margin: 40px auto; max-width: 400px; text-align: center;">
-                <h1>Welkom bij het Energy Dashboard</h1>
-                <div class="buttons" style="margin-top: 24px;">
-                    <a href="login/login.php" class="btn" style="margin-right: 10px;">Login</a>
-                    <a href="login/register.php" class="btn">Register</a>
-                </div>
-            </div>
-        <?php else: ?>
         <aside class="sidebar">
             <div class="logo-container">
-                <div class="logo">6</div>
+                <div class="logo">R</div>
                 <span class="logo-text">Rozijnen</span>
                 <button class="menu-toggle"><i class="fas fa-bars"></i></button>
             </div>
+            
             <nav class="nav-menu">
-                <a href="#" class="nav-item" id="dashboard-nav">
+                <a href="?view=dashboard" class="nav-item <?php echo $activeView == 'dashboard' ? 'active' : ''; ?>" id="dashboard-nav">
                     <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item active" id="personalize-nav">
+                <a href="?view=personalize" class="nav-item <?php echo $activeView == 'personalize' ? 'active' : ''; ?>" id="personalize-nav">
                     <i class="fas fa-sliders-h"></i>
                     <span>Personalize</span>
                 </a>
-                <a href="#" class="nav-item"></a>
+                <a href="?view=tips" class="nav-item <?php echo $activeView == 'tips' ? 'active' : ''; ?>">
                     <i class="far fa-lightbulb"></i>
                     <span>Tips</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="?view=settings" class="nav-item <?php echo $activeView == 'settings' ? 'active' : ''; ?>">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
             </nav>
+            
             <div class="user-profile">
-                <img src="https://via.placeholder.com/40" alt="User Profile" class="profile-img">
+                <img src="<?php echo htmlspecialchars($userInfo['avatar']); ?>" alt="User Profile" class="profile-img">
                 <div class="profile-info">
-                    <p class="profile-name"><?php echo isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Gebruiker'; ?></p>
-                    <button id="settings-btn" class="btn" style="width:100%;margin-top:5px;">Settings</button>
-                </div>
-                <div id="settings-popup" style="display:none;position:absolute;left:0;bottom:60px;background:#fff;border:1px solid #ccc;padding:15px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:1000;min-width:120px;">
-                    <form action="logout.php" method="post" style="margin:0;">
-                        <button type="submit" class="btn" style="width:100%;">Logout</button>
-                    </form>
+                    <p class="profile-name"><?php echo htmlspecialchars($userInfo['name']); ?></p>
+                    <p class="profile-role"><?php echo htmlspecialchars($userInfo['plan']); ?></p>
                 </div>
             </div>
         </aside>
+        
         <main class="main-content">
             <!-- Dashboard View -->
-            <div id="dashboard-view" class="view-container" style="display: none;">
+            <div id="dashboard-view" class="view-container" <?php echo $activeView != 'dashboard' ? 'style="display: none;"' : ''; ?>>
                 <header class="dashboard-header">
                     <div class="title-container">
                         <h1>Energy Dashboard</h1>
@@ -77,228 +108,162 @@ if (!isset($_SESSION['user_id'])) {
                         <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
                     </div>
                 </header>
-                <div id="dashboard-grid" class="grid-container">
-                    <!-- Grid items will be cloned from personalize view -->
+                
+                <div id="dashboard-grid" class="grid-stack">
+                    <!-- Dashboard content will be loaded here -->
                 </div>
             </div>
+            
             <!-- Personalize View -->
-            <div id="personalize-view" class="view-container">
+            <div id="personalize-view" class="view-container" <?php echo $activeView != 'personalize' ? 'style="display: none;"' : ''; ?>>
                 <header class="dashboard-header">
                     <div class="title-container">
-                        <h1>Personalize</h1>
-                        <p>Creëer je eigen Dashboard</p>
+                        <h1>Personalize Dashboard</h1>
+                        <p>Creëer je eigen dashboard layout</p>
                     </div>
                     <div class="header-actions">
                         <div class="dropdown">
                             <button class="dropdown-btn">Vandaag <i class="fas fa-chevron-down"></i></button>
                         </div>
+                        <div class="widget-toolbar">
+                            <button class="add-widget-btn"><i class="fas fa-plus"></i> Add Widget</button>
+                            <button class="save-changes-btn"><i class="fas fa-save"></i> Save Changes</button>
+                        </div>
                         <button class="export-btn"><i class="fas fa-download"></i> Export Data</button>
                     </div>
                 </header>
-                <button class="save-changes-btn">Save Changes</button>
-                <div id="personalize-grid" class="grid-container personalize-mode">
-                    <!-- Solar Production Widget -->
-                    <div class="widget stat-card" data-widget-id="solar-production" data-col-span="1" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                        </div>
-                        <div class="stat-header">
-                            <span>Zonne-energie Productie</span>
-                            <i class="fas fa-sun stat-icon green"></i>
-                        </div>
-                        <div class="stat-value">24.8 kWh</div>
-                        <div class="stat-change positive">+12% vs gisteren</div>
-                    </div>
-                    <!-- Power Consumption Widget -->
-                    <div class="widget stat-card" data-widget-id="power-consumption" data-col-span="1" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                        </div>
-                        <div class="stat-header">
-                            <span>Stroomverbruik</span>
-                            <i class="fas fa-bolt stat-icon red"></i>
-                        </div>
-                        <div class="stat-value">18.2 kWh</div>
-                        <div class="stat-change negative">-15% vs gisteren</div>
-                    </div>
-                    <!-- Battery Status Widget -->
-                    <div class="widget stat-card" data-widget-id="battery-status" data-col-span="1" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                        </div>
-                        <div class="stat-header">
-                            <span>Batterij Status</span>
-                            <i class="fas fa-battery-three-quarters stat-icon blue"></i>
-                        </div>
-                        <div class="stat-value">78%</div>
-                        <div class="stat-desc">6.2 kWh opgeslagen</div>
-                    </div>
-                    <!-- Cost Savings Widget -->
-                    <div class="widget stat-card" data-widget-id="cost-savings" data-col-span="1" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                        </div>
-                        <div class="stat-header">
-                            <span>Kosten Besparing</span>
-                            <i class="fas fa-euro-sign stat-icon yellow"></i>
-                        </div>
-                        <div class="stat-value">€127.40</div>
-                        <div class="stat-desc">Deze maand</div>
-                    </div>
-                    <!-- Energy Production Chart Widget -->
-                    <div class="widget span-2-cols" data-widget-id="energy-production-chart" data-col-span="2" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
-                        </div>
-                        <div class="panel-header">
-                            <h3>Energie Productie</h3>
-                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <div class="panel-content chart-container"></div>
-                    </div>
-                    <!-- Consumption vs Production Chart Widget -->
-                    <div class="widget span-2-cols" data-widget-id="consumption-production-chart" data-col-span="2" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
-                        </div>
-                        <div class="panel-header">
-                            <h3>Verbruik vs Productie</h3>
-                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <div class="panel-content chart-container"></div>
-                    </div>
-                    <!-- Notifications Widget -->
-                    <div class="widget span-2-cols" data-widget-id="notifications" data-col-span="2" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
-                        </div>
-                        <div class="panel-header">
-                            <h3>Meldingen & Waarschuwingen</h3>
-                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <div class="panel-content notifications">
-                            <div class="notification alert">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <div class="notification-content">
-                                    <p class="notification-title">Hoog verbruik gedetecteerd</p>
-                                    <p class="notification-desc">Verbruik 25% hoger dan gemiddeld</p>
-                                </div>
-                            </div>
-                            <div class="notification success">
-                                <i class="fas fa-check-circle"></i>
-                                <div class="notification-content">
-                                    <p class="notification-title">Optimale productie</p>
-                                    <p class="notification-desc">Zonnepanelen presteren uitstekend</p>
-                                </div>
-                            </div>
-                            <div class="notification info">
-                                <i class="fas fa-info-circle"></i>
-                                <div class="notification-content">
-                                    <p class="notification-title">Batterij bijna vol</p>
-                                    <p class="notification-desc">Overweeg energie verkoop aan het net</p>
-                                </div>
-                            </div>
+                
+                <div class="personalize-instructions">
+                    <div class="instructions-card">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="instructions-text">
+                            <strong>Tip:</strong> Sleep widgets om ze te verplaatsen, verander de grootte door aan de hoeken te slepen, 
+                            of verberg widgets met de <i class="fas fa-eye-slash"></i> knop.
                         </div>
                     </div>
-                    <!-- Weather Widget -->
-                    <div class="widget span-2-cols" data-widget-id="weather" data-col-span="2" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn expand-btn" title="Expand widget"><i class="fas fa-expand-alt"></i></button>
-                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
-                        </div>
-                        <div class="panel-header">
-                            <h3>Weer Voorspelling</h3>
-                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <div class="panel-content weather">
-                            <div class="weather-main">
-                                <i class="fas fa-sun weather-icon"></i>
-                                <div class="weather-temp">22°C</div>
-                                <div class="weather-day">Zondag</div>
-                            </div>
-                            <div class="weather-forecast">
-                                <div class="forecast-item">
-                                    <p>Zonkracht:</p>
-                                    <p class="forecast-value">8/10</p>
-                                </div>
-                                <div class="forecast-item">
-                                    <p>Verwachte productie:</p>
-                                    <p class="forecast-value highlight">28 kWh</p>
-                                </div>
-                            </div>
-                        </div>
+                </div>
+                
+                <div id="personalize-grid" class="grid-stack">
+                    <!-- Personalize content will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Settings View -->
+            <div id="settings-view" class="view-container" <?php echo $activeView != 'settings' ? 'style="display: none;"' : ''; ?>>
+                <header class="dashboard-header">
+                    <div class="title-container">
+                        <h1>Account Settings</h1>
+                        <p>Beheer je account instellingen</p>
                     </div>
-                    <!-- Devices Widget -->
-                    <div class="widget span-4-cols" data-widget-id="devices" data-col-span="4" data-row-span="1">
-                        <div class="widget-controls">
-                            <button class="widget-control-btn remove-btn" title="Remove widget"><i class="fas fa-times"></i></button>
-                            <button class="widget-control-btn shrink-btn" title="Shrink widget"><i class="fas fa-compress-alt"></i></button>
+                </header>
+                
+                <div class="settings-container">
+                    <div class="settings-card">
+                        <div class="settings-section">
+                            <h2><i class="fas fa-user"></i> Profile Information</h2>
+                            <div class="settings-form">
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" id="username" class="form-control" value="<?php echo htmlspecialchars($userInfo['name']); ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" id="email" class="form-control" value="<?php echo htmlspecialchars($userInfo['email']); ?>">
+                                </div>
+                                <button type="button" class="btn-primary" id="save-profile">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </div>
                         </div>
-                        <div class="section-header">
-                            <h3>Apparaten Status</h3>
-                            <button class="panel-menu"><i class="fas fa-ellipsis-h"></i></button>
+                        
+                        <div class="settings-section">
+                            <h2><i class="fas fa-lock"></i> Change Password</h2>
+                            <div class="settings-form">
+                                <div class="form-group">
+                                    <label for="current-password">Current Password</label>
+                                    <input type="password" id="current-password" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">New Password</label>
+                                    <input type="password" id="new-password" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">Confirm New Password</label>
+                                    <input type="password" id="confirm-password" class="form-control">
+                                </div>
+                                <button type="button" class="btn-primary" id="change-password">
+                                    <i class="fas fa-key"></i> Update Password
+                                </button>
+                            </div>
                         </div>
-                        <div class="device-cards">
-                            <div class="device-card">
-                                <div class="device-icon green"><i class="fas fa-solar-panel"></i></div>
-                                <div class="device-info">
-                                    <p class="device-name">Zonnepanelen</p>
-                                    <p class="device-status active">Actief</p>
+                        
+                        <div class="settings-section">
+                            <h2><i class="fas fa-bell"></i> Notification Settings</h2>
+                            <div class="settings-form">
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="email-notifications" checked>
+                                    <label for="email-notifications">Email Notifications</label>
                                 </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="usage-alerts" checked>
+                                    <label for="usage-alerts">Usage Alerts</label>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="tips-updates">
+                                    <label for="tips-updates">Tips & Updates</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="save-notifications">
+                                    <i class="fas fa-save"></i> Save Preferences
+                                </button>
                             </div>
-                            <div class="device-card">
-                                <div class="device-icon blue"><i class="fas fa-car-battery"></i></div>
-                                <div class="device-info">
-                                    <p class="device-name">Batterij</p>
-                                    <p class="device-status charging">Opladen</p>
-                                </div>
-                            </div>
-                            <div class="device-card">
-                                <div class="device-icon orange"><i class="fas fa-temperature-high"></i></div>
-                                <div class="device-info">
-                                    <p class="device-name">Warmtepomp</p>
-                                    <p class="device-status active">Actief</p>
-                                </div>
-                            </div>
-                            <div class="device-card">
-                                <div class="add-device-btn">
-                                    <i class="fas fa-plus"></i>
-                                </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h2><i class="fas fa-sign-out-alt"></i> Account Actions</h2>
+                            <div class="account-actions">
+                                <a href="login/logout.php" class="btn-danger">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                                <button type="button" class="btn-secondary" id="delete-account">
+                                    <i class="fas fa-trash-alt"></i> Delete Account
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-        <?php endif; ?>
     </div>
+    
+    <!-- Widget Selection Modal -->
+    <div id="widget-selection-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Add Widget</h2>
+                <button class="close-modal" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>Available Widgets</h3>
+                    <div class="widget-types">
+                        <!-- Widget types will be loaded here -->
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading available widgets...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal" type="button">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
 </body>
 </html>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var settingsBtn = document.getElementById('settings-btn');
-    var popup = document.getElementById('settings-popup');
-    if(settingsBtn && popup) {
-        settingsBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
-        });
-        document.addEventListener('click', function(e) {
-            if (!popup.contains(e.target) && e.target !== settingsBtn) {
-                popup.style.display = 'none';
-            }
-        });
-    }
-});
-</script>

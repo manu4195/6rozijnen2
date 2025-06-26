@@ -108,35 +108,75 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <div class="form-container">
-            <h2>Register</h2>
-            <p>Please fill this form to create an account.</p>
+            <h2>Welcome</h2>
+            <p>Sign up to view your energy usage</p>
+            
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
                 <div class="form-group <?php echo (!empty($username_err)) ? 'has-error' : ''; ?>">
                     <label>Username</label>
-                    <input type="text" name="username" class="form-control" value="<?php echo $username; ?>">
+                    <input type="text" name="username" class="form-control" placeholder="Enter your Username" value="<?php echo $username; ?>">
                     <span class="error-message"><?php echo $username_err; ?></span>
-                </div>    
+                </div>
+                
                 <div class="form-group <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>">
                     <label>Password</label>
-                    <input type="password" name="password" class="form-control" value="<?php echo $password; ?>">
+                    <div class="password-field">
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" value="<?php echo $password; ?>">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <i class="fa-regular fa-eye" id="password-toggle-icon"></i>
+                        </button>
+                    </div>
                     <span class="error-message"><?php echo $password_err; ?></span>
                 </div>
+                
                 <div class="form-group <?php echo (!empty($confirm_password_err)) ? 'has-error' : ''; ?>">
                     <label>Confirm Password</label>
-                    <input type="password" name="confirm_password" class="form-control" value="<?php echo $confirm_password; ?>">
+                    <div class="password-field">
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Confirm your password" value="<?php echo $confirm_password; ?>">
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')">
+                            <i class="fa-regular fa-eye" id="confirm_password-toggle-icon"></i>
+                        </button>
+                    </div>
                     <span class="error-message"><?php echo $confirm_password_err; ?></span>
                 </div>
+                
                 <div class="form-group">
-                    <input type="submit" class="btn btn-primary" value="Submit">
-                    <input type="reset" class="btn btn-secondary" value="Reset">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Remember Me</label>
+                    </div>
                 </div>
-                <p>Already have an account? <a href="login.php">Login here</a>.</p>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Sign Up</button>
+                </div>
+                
+                <p class="account-link">Already have an account? <a href="login.php">Log in here</a></p>
             </form>
         </div>
-    </div>    
+    </div>
+
+    <script>
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(inputId + '-toggle-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

@@ -6,10 +6,31 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+    background: linear-gradient(to right, #001a4d, #004080, #0080bf, #00bfff);
     color: #333;
     line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('../../img/bg-gradient.png');
+    background-size: cover;
+    background-position: center;
+}
+
+/* In case the image doesn't load, this will be the fallback */
+body:before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-image: url('../../img/bg-gradient.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .container {
@@ -24,17 +45,23 @@ body {
 }
 
 h1, h2 {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     color: #333;
+    font-weight: 600;
+    text-align: center;
 }
 
 p {
     margin-bottom: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
 }
 
 a {
-    color: #007bff;
+    color: #4285F4;
     text-decoration: none;
+    font-weight: 500;
 }
 
 a:hover {
@@ -44,11 +71,11 @@ a:hover {
 /* Form Styles */
 .form-container {
     background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    padding: 40px;
     width: 100%;
-    max-width: 500px;
+    max-width: 420px;
 }
 
 .form-group {
@@ -57,16 +84,25 @@ a:hover {
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+    font-size: 0.9rem;
 }
 
 .form-control {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
+    padding: 12px 15px;
+    border: 1px solid #e1e1e1;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #4285F4;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
 }
 
 .has-error .form-control {
@@ -75,7 +111,7 @@ a:hover {
 
 .error-message {
     color: #dc3545;
-    font-size: 14px;
+    font-size: 0.8rem;
     display: block;
     margin-top: 5px;
 }
@@ -84,7 +120,8 @@ a:hover {
     padding: 15px;
     margin-bottom: 20px;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: 5px;
+    text-align: center;
 }
 
 .alert-danger {
@@ -93,121 +130,108 @@ a:hover {
     border-color: #f5c6cb;
 }
 
+/* Password visibility toggle */
+.password-field {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+    background: none;
+    border: none;
+    font-size: 16px;
+}
+
 /* Button Styles */
 .btn {
-    display: inline-block;
-    font-weight: 400;
+    display: block;
+    width: 100%;
+    font-weight: 500;
     text-align: center;
     white-space: nowrap;
-    vertical-align: middle;
     user-select: none;
     border: 1px solid transparent;
-    padding: 10px 20px;
-    font-size: 16px;
-    line-height: 1.5;
-    border-radius: 4px;
-    transition: all 0.15s ease-in-out;
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    transition: all 0.2s ease-in-out;
     cursor: pointer;
-    margin-right: 10px;
+    margin-bottom: 15px;
     text-decoration: none;
 }
 
 .btn:hover {
     text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #007bff;
-    border-color: #007bff;
+    background-color: #4285F4;
+    border-color: #4285F4;
 }
 
 .btn-primary:hover {
-    background-color: #0069d9;
-    border-color: #0062cc;
+    background-color: #3367d6;
+    border-color: #3367d6;
 }
 
 .btn-secondary {
-    color: #fff;
-    background-color: #6c757d;
-    border-color: #6c757d;
+    color: #333;
+    background-color: #f1f1f1;
+    border-color: #e1e1e1;
 }
 
 .btn-secondary:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
+    background-color: #e5e5e5;
+    border-color: #d1d1d1;
 }
 
-.btn-warning {
-    color: #212529;
-    background-color: #ffc107;
-    border-color: #ffc107;
-}
-
-.btn-warning:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-
-.btn-danger {
-    color: #fff;
-    background-color: #dc3545;
-    border-color: #dc3545;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
-}
-
-.btn-link {
-    font-weight: 400;
-    color: #007bff;
-    background-color: transparent;
-    border: none;
-}
-
-.buttons {
+/* Remember me checkbox */
+.form-checkbox {
     display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-}
-
-/* Dashboard Styles */
-.dashboard-container {
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    width: 100%;
-    max-width: 800px;
-}
-
-.user-info {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 5px;
+    align-items: center;
     margin-bottom: 20px;
 }
 
-.action-buttons {
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px;
+.form-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.form-checkbox label {
+    font-size: 0.9rem;
+    color: #666;
+    cursor: pointer;
+}
+
+/* Account links */
+.account-link {
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 15px;
+}
+
+.forgot-password {
+    display: block;
+    text-align: right;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    color: #4285F4;
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
-    .form-container, .dashboard-container {
-        padding: 20px;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
+@media (max-width: 480px) {
+    .form-container {
+        padding: 30px 20px;
     }
     
     .btn {
-        margin-bottom: 10px;
-        width: 100%;
+        padding: 10px 15px;
     }
 }
