@@ -216,10 +216,11 @@ body {
 .header-actions {
     display: flex;
     align-items: center;
+    gap: 0.8rem;
 }
 
 .dropdown {
-    margin-right: 0.8rem;
+    position: relative;
 }
 
 .dropdown-btn {
@@ -237,7 +238,7 @@ body {
     margin-left: 0.5rem;
 }
 
-.export-btn {
+.export-btn, .add-widget-btn {
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -249,46 +250,42 @@ body {
     align-items: center;
 }
 
-.export-btn i {
+.export-btn i, .add-widget-btn i {
     margin-right: 0.5rem;
 }
 
-/* Grid Layout */
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: minmax(100px, auto);
-    gap: var(--grid-gap);
-    margin-bottom: 1.5rem;
-    min-height: 800px;
+/* GridStack Container */
+.grid-stack {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.5rem;
+    margin-top: 1.5rem;
+    min-height: 70vh;
 }
 
 /* Widget Styles */
-.widget {
+.grid-stack-item-content {
     background-color: var(--card-bg);
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.2rem;
     overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.grid-stack-item-content:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.widget {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     position: relative;
-    grid-column: auto / span 1;
-    grid-row: auto / span 1;
 }
 
-.widget.span-2-cols {
-    grid-column: auto / span 2;
-}
-
-.widget.span-2-rows {
-    grid-row: auto / span 2;
-}
-
-.widget.span-4-cols {
-    grid-column: 1 / span 4;
-}
-
-/* Stats Cards */
+/* Stat Card Styles */
 .stat-card {
-    padding: 1rem;
     display: flex;
     flex-direction: column;
 }
@@ -297,13 +294,16 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.stat-header span {
     font-size: 0.9rem;
     color: var(--text-light);
 }
 
 .stat-icon {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
 }
 
 .stat-icon.green {
@@ -323,13 +323,13 @@ body {
 }
 
 .stat-value {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: 600;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.5rem;
 }
 
 .stat-change, .stat-desc {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-light);
 }
 
@@ -346,12 +346,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.8rem;
     border-bottom: 1px solid var(--border-color);
 }
 
 .panel-header h3 {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
 }
 
@@ -360,94 +361,129 @@ body {
     border: none;
     color: var(--text-light);
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 .panel-content {
-    padding: 1rem;
-    min-height: 200px;
+    flex: 1;
+    overflow: auto;
 }
 
 .chart-container {
+    width: 100%;
     height: 100%;
     min-height: 200px;
 }
 
-/* Notifications */
-.notifications {
+/* Notification Styles */
+#notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 10px;
+    max-width: 350px;
 }
 
 .notification {
-    display: flex;
-    align-items: flex-start;
-    padding: 0.8rem;
+    background-color: white;
     border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    animation: slideIn 0.3s ease-out forwards;
+    overflow: hidden;
 }
 
-.notification i {
-    margin-right: 0.8rem;
+.notification.hiding {
+    animation: slideOut 0.3s ease-in forwards;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification-content i {
     font-size: 1.2rem;
-    margin-top: 0.2rem;
 }
 
-.notification-title {
-    font-weight: 500;
-    margin-bottom: 0.2rem;
-}
-
-.notification-desc {
-    font-size: 0.8rem;
-    color: var(--text-light);
-}
-
-.notification.alert {
-    background-color: var(--alert-bg);
-}
-
-.notification.alert i {
-    color: var(--red);
-}
-
-.notification.success {
-    background-color: var(--success-bg);
-}
-
-.notification.success i {
+.notification.success .notification-content i {
     color: var(--green);
 }
 
-.notification.info {
-    background-color: var(--info-bg);
+.notification.error .notification-content i {
+    color: var(--red);
 }
 
-.notification.info i {
+.notification.info .notification-content i {
     color: var(--blue);
 }
 
-/* Weather */
+.notification-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 0.9rem;
+    padding: 0;
+    margin-left: 10px;
+}
+
+.notification-close:hover {
+    color: #333;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Weather Widget Styles */
 .weather {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
 }
 
 .weather-main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 1rem;
+    justify-content: center;
 }
 
 .weather-icon {
+    font-size: 3.5rem;
     color: var(--yellow);
-    font-size: 3rem;
     margin-bottom: 0.5rem;
 }
 
 .weather-temp {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 600;
 }
 
@@ -458,13 +494,14 @@ body {
 .weather-forecast {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 1rem;
 }
 
 .forecast-item {
     display: flex;
-    justify-content: space-between;
-    font-size: 0.9rem;
+    flex-direction: column;
+    gap: 0.3rem;
 }
 
 .forecast-value {
@@ -472,41 +509,24 @@ body {
 }
 
 .forecast-value.highlight {
-    color: var(--green);
+    color: var(--blue);
 }
 
-/* Devices Section */
-.devices-section {
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-    position: relative;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.section-header h3 {
-    font-size: 1rem;
-    font-weight: 600;
-}
-
+/* Device Widget Styles */
 .device-cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    padding: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 1rem;
+    margin-top: 1rem;
 }
 
 .device-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
     display: flex;
     align-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .device-icon {
@@ -516,7 +536,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 0.8rem;
+    margin-right: 1rem;
+    font-size: 1.2rem;
     color: white;
 }
 
@@ -538,7 +559,7 @@ body {
 
 .device-name {
     font-weight: 500;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.3rem;
 }
 
 .device-status {
@@ -555,157 +576,173 @@ body {
 }
 
 .device-status.inactive {
-    color: var(--text-light);
+    color: var(--red);
 }
 
-/* Personalize View Styles */
 .view-container {
     width: 100%;
-    position: relative;
 }
 
 .save-changes-btn {
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    background-color: #000;
+    background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 4px;
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 1.5rem;
     font-weight: 500;
-    cursor: pointer;
-    z-index: 10;
+    transition: background-color 0.2s ease;
 }
 
-/* Personalize Mode Styles - Simplified */
-.personalize-mode {
-    background-color: transparent;
-    position: relative;
+.save-changes-btn:hover {
+    background-color: #2351cc;
 }
 
-.personalize-mode .widget {
-    cursor: move;
-    transition: box-shadow 0.2s;
-    position: relative;
-    z-index: 1;
-}
-
-.personalize-mode .widget:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 1px dashed var(--primary-color);
-}
-
-.personalize-mode .widget.dragging {
-    opacity: 0.8;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    border: 1px dashed var(--primary-color);
-}
-
-/* Remove Widget Button */
-.remove-widget {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 24px;
-    height: 24px;
-    background-color: var(--red);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 5;
-    transform: translate(50%, -50%);
-    font-size: 0.7rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.personalize-mode .widget:hover .remove-widget {
-    opacity: 1;
-}
-
-/* Resize Handle */
-.resize-handle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 12px;
-    height: 12px;
-    background-color: var(--primary-color);
-    border: 2px solid white;
-    border-radius: 2px;
-    cursor: nwse-resize;
-    z-index: 5;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.personalize-mode .widget:hover .resize-handle {
-    opacity: 1;
-}
-
-/* Widget controls */
+/* Widget Controls */
 .widget-controls {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    z-index: 10;
+    top: 0.5rem;
+    right: 0.5rem;
     display: flex;
-    gap: 5px;
+    gap: 0.3rem;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s ease;
+    z-index: 2;
 }
 
-.personalize-mode .widget:hover .widget-controls {
+.grid-stack-item:hover .widget-controls {
     opacity: 1;
 }
 
 .widget-control-btn {
     width: 24px;
     height: 24px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.1);
-    color: var(--text-color);
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 12px;
-    border: none;
+    font-size: 0.7rem;
+    color: var(--text-color);
 }
 
 .widget-control-btn:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(240, 240, 240, 0.9);
 }
 
 .widget-control-btn.remove-btn {
-    background-color: var(--red);
-    color: white;
+    color: var(--red);
 }
 
-.widget-control-btn.expand-btn {
-    background-color: var(--green);
-    color: white;
+.widget-control-btn.edit-btn {
+    color: var(--blue);
 }
 
-.widget-control-btn.shrink-btn {
-    background-color: var(--blue);
-    color: white;
+/* Add Device Button */
+.add-device-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    cursor: pointer;
 }
 
-/* Responsive adjustments */
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.widget-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.widget-type-item {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.widget-type-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.widget-type-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.widget-type-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Responsive Styles */
 @media (max-width: 1200px) {
-    .grid-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .device-cards {
-        grid-template-columns: repeat(2, 1fr);
+    .grid-stack-item {
+        width: 50% !important;
     }
 }
 
@@ -716,159 +753,373 @@ body {
     
     .sidebar {
         width: 100%;
-        padding: 0.5rem;
     }
     
-    .grid-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .device-cards {
-        grid-template-columns: 1fr;
+    .grid-stack-item {
+        width: 100% !important;
     }
 }
 
-/* Grid Controls */
-.grid-controls {
-    padding: 1rem;
-    text-align: center;
-    margin-top: 1rem;
+/* Add styles for widget controls */
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.toggle-grid-btn {
-    background-color: var(--primary-color);
+.widget-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.widget-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.widget-control {
+    background-color: #f8f9fa;
+    border: 1px solid #e2e6ea;
+    color: #6c757d;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.widget-control:hover {
+    background-color: #e2e6ea;
+    color: #343a40;
+}
+
+.hide-widget:hover {
+    background-color: #f8d7da;
+    color: #e74c3c;
+    border-color: #f5c6cb;
+}
+
+/* Hidden widgets section in modal */
+.hidden-widgets-container {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.hidden-widgets-container h3 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.hidden-widget-item {
+    position: relative;
+}
+
+.restore-widget-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #2ecc71;
     color: white;
     border: none;
     border-radius: 4px;
-    padding: 0.5rem 1.5rem;
+    padding: 6px 12px;
     font-size: 0.9rem;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s;
-}
-
-.toggle-grid-btn:hover {
-    background-color: #2952cc;
-}
-
-/* Add login modal styles */
-.login-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
     display: flex;
-    justify-content: center;
     align-items: center;
-    z-index: 1000;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.login-modal.hidden {
-    display: none;
+.restore-widget-btn:hover {
+    background-color: #27ae60;
 }
 
-.login-container {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+.restore-widget-btn i {
+    margin-right: 4px;
 }
 
-.login-container h2 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
+/* Notification styles */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background-color: #fff;
     color: #333;
-    text-align: center;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #555;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
     border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 300px;
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+.notification.success {
+    border-left: 4px solid #2ecc71;
+}
+
+.notification.error {
+    border-left: 4px solid #e74c3c;
+}
+
+.notification.info {
+    border-left: 4px solid #3498db;
+}
+
+.notification.hide {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/* Available widgets section in modal */
+.available-widgets-container {
+    margin-bottom: 20px;
+}
+
+.available-widgets-container h3 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.widget-type-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+.widget-type-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.widget-type-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.widget-type-icon i {
+    font-size: 1.5rem;
+}
+
+.widget-type-info {
+    flex: 1;
+}
+
+.widget-type-info h4 {
+    margin: 0 0 5px 0;
     font-size: 1rem;
 }
 
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 2rem;
+.widget-type-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
 }
 
-.login-submit-btn, .cancel-btn {
-    padding: 0.8rem 1.5rem;
+.add-widget-btn-small {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #3498db;
+    color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-widget-btn-small i {
+    margin-right: 4px;
+}
+
+.add-widget-btn-small:hover {
+    background-color: #2980b9;
+}
+
+.add-widget-btn-small:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* Settings View Styles */
+.settings-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.settings-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    overflow: hidden;
+}
+
+.settings-section {
+    padding: 25px 30px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-section h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+    display: flex;
+    align-items: center;
+}
+
+.settings-section h2 i {
+    margin-right: 10px;
+    color: var(--blue);
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settings-form .form-group {
+    margin-bottom: 15px;
+}
+
+.settings-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.settings-form .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.settings-form .form-control:focus {
+    border-color: var(--blue);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.account-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Button styles for settings */
+.btn-primary, .btn-secondary, .btn-danger {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 4px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    text-align: center;
+    border: none;
+    font-size: 0.9rem;
+    text-decoration: none;
 }
 
-.login-submit-btn {
-    background-color: #4CAF50;
+.btn-primary {
+    background-color: var(--blue);
     color: white;
 }
 
-.login-submit-btn:hover {
-    background-color: #388E3C;
+.btn-primary:hover {
+    background-color: #2b6ed9;
 }
 
-.cancel-btn {
-    background-color: #f2f2f2;
+.btn-secondary {
+    background-color: #f1f1f1;
     color: #333;
 }
 
-.cancel-btn:hover {
-    background-color: #e0e0e0;
+.btn-secondary:hover {
+    background-color: #e1e1e1;
 }
 
-.error-message {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 0.8rem;
-    border-radius: 5px;
-    margin-bottom: 1.5rem;
-    font-size: 0.9rem;
-}
-
-.login-btn {
-    background-color: #4CAF50;
+.btn-danger {
+    background-color: #dc3545;
     color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
 }
 
-.login-btn:hover {
-    background-color: #388E3C;
+.btn-danger:hover {
+    background-color: #c82333;
 }
 
-.logout-link {
-    color: #c62828;
-    font-size: 0.8rem;
-    text-decoration: none;
-    display: block;
-    margin-top: 0.5rem;
-}
-
-.logout-link:hover {
-    text-decoration: underline;
+/* Responsive styles for settings */
+@media (max-width: 768px) {
+    .settings-section {
+        padding: 20px;
+    }
+    
+    .account-actions {
+        flex-direction: column;
+    }
+    
+    .account-actions .btn-danger,
+    .account-actions .btn-secondary {
+        width: 100%;
+    }
 } 

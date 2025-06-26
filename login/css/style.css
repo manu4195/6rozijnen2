@@ -1,0 +1,237 @@
+/* General Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+    background: linear-gradient(to right, #001a4d, #004080, #0080bf, #00bfff);
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('../../img/bg-gradient.png');
+    background-size: cover;
+    background-position: center;
+}
+
+/* In case the image doesn't load, this will be the fallback */
+body:before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-image: url('../../img/bg-gradient.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1, h2 {
+    margin-bottom: 10px;
+    color: #333;
+    font-weight: 600;
+    text-align: center;
+}
+
+p {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+a {
+    color: #4285F4;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Form Styles */
+.form-container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e1e1e1;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #4285F4;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.has-error .form-control {
+    border-color: #dc3545;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 5px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+/* Password visibility toggle */
+.password-field {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+    background: none;
+    border: none;
+    font-size: 16px;
+}
+
+/* Button Styles */
+.btn {
+    display: block;
+    width: 100%;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    margin-bottom: 15px;
+    text-decoration: none;
+}
+
+.btn:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #4285F4;
+    border-color: #4285F4;
+}
+
+.btn-primary:hover {
+    background-color: #3367d6;
+    border-color: #3367d6;
+}
+
+.btn-secondary {
+    color: #333;
+    background-color: #f1f1f1;
+    border-color: #e1e1e1;
+}
+
+.btn-secondary:hover {
+    background-color: #e5e5e5;
+    border-color: #d1d1d1;
+}
+
+/* Remember me checkbox */
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.form-checkbox label {
+    font-size: 0.9rem;
+    color: #666;
+    cursor: pointer;
+}
+
+/* Account links */
+.account-link {
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 15px;
+}
+
+.forgot-password {
+    display: block;
+    text-align: right;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    color: #4285F4;
+}
+
+/* Responsive Styles */
+@media (max-width: 480px) {
+    .form-container {
+        padding: 30px 20px;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+    }
+}
