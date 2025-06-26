@@ -1010,3 +1010,176 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize when DOM is loaded
     init();
 });
+
+// Settings Page Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Get references to settings page elements
+    const saveProfileBtn = document.getElementById('save-profile');
+    const changePasswordBtn = document.getElementById('change-password');
+    const saveNotificationsBtn = document.getElementById('save-notifications');
+    const deleteAccountBtn = document.getElementById('delete-account');
+    
+    // Update profile information
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', function() {
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            
+            // Validate inputs
+            if (!username || !email) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+            
+            // Make API call to update profile
+            fetch('api/update_profile.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    email: email
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    // Update displayed username in sidebar
+                    const profileName = document.querySelector('.profile-name');
+                    if (profileName) {
+                        profileName.textContent = username;
+                    }
+                } else {
+                    showNotification(data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating profile:', error);
+                showNotification('Error updating profile. Please try again.', 'error');
+            });
+        });
+    }
+    
+    // Change password
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', function() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Validate inputs
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showNotification('Please fill in all password fields', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showNotification('New passwords do not match', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showNotification('Password must be at least 6 characters long', 'error');
+                return;
+            }
+            
+            // Make API call to change password
+            fetch('api/change_password.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    // Clear the form
+                    document.getElementById('current-password').value = '';
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                } else {
+                    showNotification(data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error changing password:', error);
+                showNotification('Error changing password. Please try again.', 'error');
+            });
+        });
+    }
+    
+    // Save notification preferences
+    if (saveNotificationsBtn) {
+        saveNotificationsBtn.addEventListener('click', function() {
+            const emailNotifications = document.getElementById('email-notifications').checked;
+            const usageAlerts = document.getElementById('usage-alerts').checked;
+            const tipsUpdates = document.getElementById('tips-updates').checked;
+            
+            // For this demo, we'll just show a success message
+            // In a real app, you would make an API call here
+            showNotification('Notification preferences saved', 'success');
+        });
+    }
+    
+    // Delete account
+    if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                // For this demo, we'll just redirect to logout
+                // In a real app, you would make an API call here
+                window.location.href = 'login/logout.php';
+            }
+        });
+    }
+    
+    // Function to show notifications
+    function showNotification(message, type = 'info') {
+        // Check if the notification container exists
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            document.body.appendChild(container);
+        }
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="notification-close"><i class="fas fa-times"></i></button>
+        `;
+        
+        // Add to container
+        container.appendChild(notification);
+        
+        // Add close button functionality
+        const closeBtn = notification.querySelector('.notification-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            });
+        }
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.add('hiding');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 5000);
+    }
+});

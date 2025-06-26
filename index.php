@@ -12,7 +12,7 @@ if(!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 
 // Check which view to show
-$activeView = isset($_GET['view']) && $_GET['view'] === 'personalize' ? 'personalize' : 'dashboard';
+$activeView = isset($_GET['view']) ? $_GET['view'] : 'dashboard';
 
 // Dummy user info for demo
 $userInfo = [
@@ -141,6 +141,91 @@ $userInfo = [
                 
                 <div id="personalize-grid" class="grid-stack">
                     <!-- Personalize content will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Settings View -->
+            <div id="settings-view" class="view-container" <?php echo $activeView != 'settings' ? 'style="display: none;"' : ''; ?>>
+                <header class="dashboard-header">
+                    <div class="title-container">
+                        <h1>Account Settings</h1>
+                        <p>Beheer je account instellingen</p>
+                    </div>
+                </header>
+                
+                <div class="settings-container">
+                    <div class="settings-card">
+                        <div class="settings-section">
+                            <h2><i class="fas fa-user"></i> Profile Information</h2>
+                            <div class="settings-form">
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" id="username" class="form-control" value="<?php echo htmlspecialchars($userInfo['name']); ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" id="email" class="form-control" value="<?php echo htmlspecialchars($userInfo['email']); ?>">
+                                </div>
+                                <button type="button" class="btn-primary" id="save-profile">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h2><i class="fas fa-lock"></i> Change Password</h2>
+                            <div class="settings-form">
+                                <div class="form-group">
+                                    <label for="current-password">Current Password</label>
+                                    <input type="password" id="current-password" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">New Password</label>
+                                    <input type="password" id="new-password" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">Confirm New Password</label>
+                                    <input type="password" id="confirm-password" class="form-control">
+                                </div>
+                                <button type="button" class="btn-primary" id="change-password">
+                                    <i class="fas fa-key"></i> Update Password
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h2><i class="fas fa-bell"></i> Notification Settings</h2>
+                            <div class="settings-form">
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="email-notifications" checked>
+                                    <label for="email-notifications">Email Notifications</label>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="usage-alerts" checked>
+                                    <label for="usage-alerts">Usage Alerts</label>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="tips-updates">
+                                    <label for="tips-updates">Tips & Updates</label>
+                                </div>
+                                <button type="button" class="btn-primary" id="save-notifications">
+                                    <i class="fas fa-save"></i> Save Preferences
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h2><i class="fas fa-sign-out-alt"></i> Account Actions</h2>
+                            <div class="account-actions">
+                                <a href="login/logout.php" class="btn-danger">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                                <button type="button" class="btn-secondary" id="delete-account">
+                                    <i class="fas fa-trash-alt"></i> Delete Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
